@@ -1687,6 +1687,9 @@
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="filter" data-filter="'+f+'">'+label+'</button>';
     });
     html += '<button class="btn secondary small" data-action="export">Export CSV</button>';
+    if (can('addRack')){
+      html += '<label class="btn secondary small">Import CSV<input type="file" accept=".csv,text/csv" id="importCsvInput" style="display:none;"></label>';
+    }
     html += '</div>';
 
     // Add row
@@ -1788,6 +1791,16 @@
     document.querySelectorAll('[data-action="export"]').forEach(function(btn){
       btn.addEventListener('click', function(){ exportCsv(loc, units); });
     });
+
+    var importCsvInput = document.getElementById('importCsvInput');
+    if (importCsvInput){
+      importCsvInput.addEventListener('change', function(){
+        var file = importCsvInput.files && importCsvInput.files[0];
+        if (!file) return;
+        importRackCsv(file, loc);
+        importCsvInput.value = '';
+      });
+    }
 
     document.querySelectorAll('[data-action="add"]').forEach(function(btn){
       btn.addEventListener('click', async function(){
@@ -1955,6 +1968,9 @@
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
     });
     html += '<button class="btn secondary small" data-action="wl-export">Export CSV</button>';
+    if (can('addWaitlist')){
+      html += '<label class="btn secondary small">Import CSV<input type="file" accept=".csv,text/csv" id="wlImportCsvInput" style="display:none;"></label>';
+    }
     html += '</div>';
 
     if (can('addWaitlist')){
@@ -2137,6 +2153,16 @@
       wlExportBtn.addEventListener('click', exportWaitlistCsv);
     }
 
+    var wlImportCsvInput = document.getElementById('wlImportCsvInput');
+    if (wlImportCsvInput){
+      wlImportCsvInput.addEventListener('change', function(){
+        var file = wlImportCsvInput.files && wlImportCsvInput.files[0];
+        if (!file) return;
+        importWaitlistCsv(file);
+        wlImportCsvInput.value = '';
+      });
+    }
+
     var wlNewLocSelect = document.getElementById('wlNewLoc');
     if (wlNewLocSelect){
       wlNewLocSelect.addEventListener('change', async function(){
@@ -2223,6 +2249,148 @@
         });
       }
     });
+  }
+
+  // Basic CSV parser supporting quoted fields with escaped "" quotes,
+  // matching the format our own Export CSV buttons produce.
+  function parseCsv(text){
+    var rows = [];
+    var row = [];
+    var field = '';
+    var inQuotes = false;
+    var i = 0;
+    text = String(text||'').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    while (i < text.length){
+      var c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      } else {
+        if (c === '"'){ inQuotes = true; i++; continue; }
+        if (c === ','){ row.push(field); field=''; i++; continue; }
+        if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
+        field += c; i++; continue;
+      }
+    }
+    if (field.length>0 || row.length>0){ row.push(field); rows.push(row); }
+    rows = rows.filter(function(r){ return !(r.length===1 && r[0]===''); });
+    return rows;
+  }
+
+  function rackStatusKeyFromLabel(label){
+    var map = { 'vacant':'vacant', 'assigned':'assigned', 'paid':'paid', 'needs repair':'repair', 'removal':'removal' };
+    return map[(label||'').trim().toLowerCase()] || null;
+  }
+
+  // Reads a rack/space CSV (matching our own Export CSV format: ID, Lot #,
+  // Status, Notes, Audited On, Audited By) and upserts by ID into this
+  // location's list — existing racks get updated, new IDs get added.
+  function importRackCsv(file, loc){
+    var reader = new FileReader();
+    reader.onload = async function(){
+      try {
+        var rows = parseCsv(reader.result);
+        if (!rows.length){ showAlert('That file has no rows.'); return; }
+        var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'id') ? 1 : 0;
+        var units = state.data[loc.id] || (state.data[loc.id] = []);
+        var added = 0, updated = 0;
+        for (var i = startIdx; i < rows.length; i++){
+          var r = rows[i];
+          var id = (r[0]||'').trim();
+          if (!id) continue;
+          var lot = (r[1]||'').trim();
+          var statusKey = rackStatusKeyFromLabel(r[2]);
+          var notes = (r[3]||'').trim();
+          var auditedOn = (r[4]||'').trim();
+          var auditedBy = (r[5]||'').trim();
+          var existing = units.find(function(u){ return u.id.toLowerCase() === id.toLowerCase(); });
+          if (existing){
+            existing.lot = lot;
+            if (statusKey) existing.status = statusKey;
+            existing.notes = notes;
+            existing.auditedOn = auditedOn;
+            existing.auditedBy = auditedBy;
+            updated++;
+          } else {
+            units.push({ id: id, lot: lot, status: statusKey || 'vacant', notes: notes, auditedOn: auditedOn, auditedBy: auditedBy });
+            added++;
+          }
+        }
+        await saveLocation(loc.id);
+        render();
+        showAlert('Imported: '+added+' added, '+updated+' updated.');
+      } catch(e){
+        showAlert('Couldn\'t read that file. Make sure it\'s a CSV in the same format as Export CSV.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function waitlistStatusKeyFromLabel(label){
+    var found = 'waiting';
+    Object.keys(WAITLIST_STATUSES).forEach(function(k){
+      if (WAITLIST_STATUSES[k].toLowerCase() === (label||'').trim().toLowerCase()) found = k;
+    });
+    return found;
+  }
+
+  async function resolveLocationIdByLabelForImport(label){
+    label = (label||'').trim();
+    if (!label) return LOCATIONS[0].id;
+    var existing = LOCATIONS.find(function(l){ return l.label.toLowerCase() === label.toLowerCase(); });
+    if (existing) return existing.id;
+    var id = slugify(label);
+    var newLoc = { id: id, label: label, unitLabel: 'Site #', category: 'Other' };
+    LOCATIONS.push(newLoc);
+    state.data[id] = [];
+    await saveLocationConfig();
+    await saveLocation(id);
+    return id;
+  }
+
+  // Reads a waitlist CSV (matching our own Export CSV format: Position, Name,
+  // Phone, Lot #, Location, Status, Notes, Date Added) and appends each row
+  // as a new waitlist entry. A Location name that doesn't exist yet is
+  // created automatically (as its own new park, category "Other").
+  function importWaitlistCsv(file){
+    var reader = new FileReader();
+    reader.onload = async function(){
+      try {
+        var rows = parseCsv(reader.result);
+        if (!rows.length){ showAlert('That file has no rows.'); return; }
+        var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'position') ? 1 : 0;
+        var addedCount = 0;
+        for (var i = startIdx; i < rows.length; i++){
+          var r = rows[i];
+          var name = (r[1]||'').trim();
+          if (!name) continue;
+          var phone = (r[2]||'').trim();
+          var lot = (r[3]||'').trim();
+          var locationId = await resolveLocationIdByLabelForImport(r[4]);
+          var statusKey = waitlistStatusKeyFromLabel(r[5]);
+          var notes = (r[6]||'').trim();
+          var dateAddedRaw = (r[7]||'').trim();
+          var dateAdded = dateAddedRaw || todayISO();
+          var parsedDate = new Date(dateAdded);
+          var addedAt = isNaN(parsedDate.getTime()) ? Date.now() : parsedDate.getTime();
+          state.waitlist.push({
+            id: 'wl-' + Date.now() + '-' + Math.floor(Math.random()*100000) + '-' + i,
+            name: name, phone: phone, lot: lot, locationId: locationId,
+            notes: notes, status: statusKey, addedAt: addedAt, dateAdded: dateAdded
+          });
+          addedCount++;
+        }
+        await saveWaitlist();
+        render();
+        showAlert('Imported '+addedCount+' waitlist entr'+(addedCount===1?'y':'ies')+'.');
+      } catch(e){
+        showAlert('Couldn\'t read that file. Make sure it\'s a CSV in the same format as Export CSV.');
+      }
+    };
+    reader.readAsText(file);
   }
 
   function exportWaitlistCsv(){
