@@ -391,10 +391,10 @@
 <script>
 (function(){
   var DEFAULT_LOCATIONS = [
-    { id: 'holiday-park', label: 'Roamingwood Marina Rack', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
-    { id: 'getaway-park', label: 'Getaway Park', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
-    { id: 'deerfield-lake', label: 'Deerfield Lake', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
-    { id: 'brooks-lake', label: 'Brooks Lake', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
+    { id: 'holiday-park', label: 'Roamingwood Marina Rack', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
+    { id: 'getaway-park', label: 'Getaway Park', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
+    { id: 'deerfield-lake', label: 'Deerfield Lake', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
+    { id: 'brooks-lake', label: 'Brooks Lake', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
     { id: 'dry-dock', label: 'Dry Dock', unitLabel: 'Space #', category: 'Laurel Park Camp Ground' },
     { id: 'laurel-park-campground', label: 'Laurel Park Camp Ground', unitLabel: 'Site #', category: 'Laurel Park Camp Ground' }
   ];
@@ -966,7 +966,7 @@
       try { await window.storage.delete('audit-ver:' + LOCATIONS[i].id, true); } catch(e){}
     }
     var blankId = 'park-1';
-    LOCATIONS = [{ id: blankId, label: 'New Park', unitLabel: 'Rack #' }];
+    LOCATIONS = [{ id: blankId, label: 'New Park', unitLabel: 'Site #' }];
     await saveLocationConfig();
     state.data = {};
     state.data[blankId] = [];
@@ -1608,7 +1608,7 @@
           LOCATIONS.forEach(function(l){ if (existingCats.indexOf(l.category)===-1) existingCats.push(l.category); });
           showPrompt('Category for "'+name+'" (existing: '+existingCats.join(', ')+'):', '', async function(category){
             var id = slugify(name);
-            var newLoc = { id: id, label: name, unitLabel: 'Rack #', category: (category||'').trim() || 'Other' };
+            var newLoc = { id: id, label: name, unitLabel: 'Site #', category: (category||'').trim() || 'Other' };
             LOCATIONS.push(newLoc);
             state.data[id] = [];
             await saveLocationConfig();
@@ -1633,7 +1633,7 @@
         showPrompt('Name of new park/location in "'+category+'":', '', async function(name){
           if (!name) return;
           var id = slugify(name);
-          var newLoc = { id: id, label: name, unitLabel: 'Rack #', category: category };
+          var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
           LOCATIONS.push(newLoc);
           state.data[id] = [];
           await saveLocationConfig();
@@ -1689,7 +1689,7 @@
       html += '<div class="add-row">';
       html += '<input type="text" name="id" id="newId" placeholder="'+loc.unitLabel+'">';
       html += '<input type="text" name="lot" id="newLot" placeholder="Lot # (optional)">';
-      html += '<button class="btn" data-action="add">+ Add '+ (loc.id==='dry-dock' ? 'space' : 'rack') +'</button>';
+      html += '<button class="btn" data-action="add">+ Add '+ (loc.id==='dry-dock' ? 'space' : 'site') +'</button>';
       html += '</div>';
     } else if (!state.isStaff){
       html += '<div class="readonly-banner">👁 View only — log in above to make changes.</div>';
@@ -1874,7 +1874,7 @@
         onConfirm: async function(name){
           if (!name){ resolve(null); return; }
           var id = slugify(name);
-          var newLoc = { id: id, label: name, unitLabel: 'Rack #' };
+          var newLoc = { id: id, label: name, unitLabel: 'Site #' };
           LOCATIONS.push(newLoc);
           state.data[id] = [];
           await saveLocationConfig();
