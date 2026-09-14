@@ -419,7 +419,7 @@
   // Fills in categories for locations saved before categories existed, and
   // adds any brand-new default locations (like Laurel Park Camp Ground) that
   // weren't part of an older saved config yet.
-  var CATEGORY_MOVE_VERSION = 2; // bump this to force a one-time re-categorization below
+  var CATEGORY_MOVE_VERSION = 3; // bump this to force a one-time re-categorization/label fix below
   var FORCED_CATEGORY_MOVES = { 'dry-dock': 'Laurel Park Camp Ground' };
 
   async function migrateLocationCategories(){
@@ -447,6 +447,11 @@
       Object.keys(FORCED_CATEGORY_MOVES).forEach(function(id){
         var loc = LOCATIONS.find(function(l){ return l.id === id; });
         if (loc) loc.category = FORCED_CATEGORY_MOVES[id];
+      });
+      // One-time fix: any location still labeled "Rack #" from before the
+      // wording change gets updated to "Site #" (Dry Dock's "Space #" is untouched).
+      LOCATIONS.forEach(function(l){
+        if (l.unitLabel === 'Rack #') l.unitLabel = 'Site #';
       });
       changed = true;
       try { await window.storage.set('category-move-version', String(CATEGORY_MOVE_VERSION), true); } catch(e2){}
