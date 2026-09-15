@@ -2239,9 +2239,12 @@
       inp.addEventListener('change', async function(){
         var id = inp.getAttribute('data-id');
         var newPos = parseInt(inp.value, 10);
-        if (!newPos || isNaN(newPos)){ render(); return; }
+        if (!newPos || isNaN(newPos)) return; // leave the box alone; don't snap back mid-edit
         await setWaitlistPosition(id, newPos);
         render();
+      });
+      inp.addEventListener('keydown', function(e){
+        if (e.key === 'Enter'){ inp.blur(); }
       });
     });
 
