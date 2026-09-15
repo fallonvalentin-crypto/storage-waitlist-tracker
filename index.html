@@ -155,6 +155,8 @@
   .btn:hover{background:#0d2635;}
   .btn.secondary{background:#fff;color:var(--deep-water);border:2px solid var(--deep-water);}
   .btn.secondary:hover{background:var(--dock-wood-light);}
+  .btn.undo-btn{border-color:var(--repair);color:var(--repair);}
+  .btn.undo-btn:hover{background:var(--repair-bg);}
   .btn.small{padding:6px 10px;font-size:0.78rem;}
 
   /* Grid */
@@ -238,8 +240,14 @@
   }
   .wl-position{
     font-weight:800;font-size:1.1rem;color:var(--dock-wood);min-width:28px;
-    padding-top:4px;
+    padding-top:4px;display:flex;align-items:center;gap:3px;
   }
+  .wl-pos-hash{font-size:0.85rem;color:var(--dock-wood);}
+  .wl-pos-input{
+    width:38px;text-align:center;font-weight:800;font-size:0.95rem;color:var(--dock-wood);
+    border:1.5px solid var(--line);border-radius:5px;padding:2px 0;
+  }
+  .wl-pos-input:focus{outline:2px solid var(--deep-water);outline-offset:1px;border-color:var(--deep-water);}
   .wl-main{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px;}
   .wl-name-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .wl-name-row input[type="text"]{
@@ -515,6 +523,8 @@
     isOwner: false,
     isAdmin: false,
     isStaff: false,
+    lastRackImportBackup: null, // { locId, label, snapshot } — cleared on undo or reload
+    lastWaitlistImportBackup: null, // { label, snapshot } — cleared on undo or reload
     loading: true
   };
 
@@ -1690,6 +1700,9 @@
     html += '<button class="btn secondary small" data-action="export">Export CSV</button>';
     if (can('addRack')){
       html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="importCsvInput" style="display:none;"></label>';
+      if (state.lastRackImportBackup && state.lastRackImportBackup.locId === loc.id){
+        html += '<button class="btn secondary small undo-btn" data-action="undo-rack-import">Undo last import</button>';
+      }
     }
     html += '</div>';
 
@@ -1800,6 +1813,20 @@
         if (!file) return;
         importRackCsv(file, loc);
         importCsvInput.value = '';
+      });
+    }
+
+    var undoRackImportBtn = document.querySelector('[data-action="undo-rack-import"]');
+    if (undoRackImportBtn){
+      undoRackImportBtn.addEventListener('click', function(){
+        var backup = state.lastRackImportBackup;
+        if (!backup) return;
+        showConfirm('Undo the last import into "'+backup.label+'"? This restores it to how it was right before that import.', async function(){
+          state.data[backup.locId] = backup.snapshot;
+          state.lastRackImportBackup = null;
+          await saveLocation(backup.locId);
+          render();
+        });
       });
     }
 
@@ -1949,49 +1976,7 @@
     return html;
   }
 
-  function renderWaitlistView(){
-    var html = renderSectionToggle();
-
-    html += '<div class="toolbar">';
-    html += '<input type="text" id="wlSearchInput" placeholder="Search by name, phone, or lot #…" value="'+escapeAttr(state.search)+'">';
-    html += '<select id="wlLocFilter">';
-    html += '<option value="all"'+(state.waitlistFilterLoc==='all'?' selected':'')+'>Any location</option>';
-    html += renderLocationFilterOptions(state.waitlistFilterLoc);
-    if (can('manageLocations')){
-      html += '<option disabled>──────────</option>';
-      html += '<option value="__add_location__">+ Add new location…</option>';
-      html += '<option value="__rename_location__">✎ Rename this location…</option>';
-      html += '<option value="__remove_location__">🗑 Delete this location…</option>';
-    }
-    html += '</select>';
-    ['all','waiting','contacted','offered','placed','dropped','denied'].forEach(function(f){
-      var label = f==='all' ? 'All' : WAITLIST_STATUSES[f];
-      html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
-    });
-    html += '<button class="btn secondary small" data-action="wl-export">Export CSV</button>';
-    if (can('addWaitlist')){
-      html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="wlImportCsvInput" style="display:none;"></label>';
-    }
-    html += '</div>';
-
-    if (can('addWaitlist')){
-      html += '<div class="add-row">';
-      html += '<input type="text" id="wlNewName" placeholder="Member name">';
-      html += '<input type="text" id="wlNewPhone" placeholder="Phone">';
-      html += '<input type="text" id="wlNewLot" placeholder="Lot #">';
-      html += '<select id="wlNewLoc">';
-      html += renderLocationOptionsGrouped(LOCATIONS[0] ? LOCATIONS[0].id : null);
-      if (can('manageLocations')){
-        html += '<option disabled>──────────</option>';
-        html += '<option value="__add_location__">+ Add new location…</option>';
-      }
-      html += '</select>';
-      html += '<button class="btn" data-action="wl-add">+ Add to waitlist</button>';
-      html += '</div>';
-    } else if (!state.isStaff){
-      html += '<div class="readonly-banner">👁 View only — log in above to add or edit waitlist entries.</div>';
-    }
-
+  function getVisibleWaitlist(){
     var visible = state.waitlist.filter(function(w){
       var matchesFilter = state.filter==='all' || w.status===state.filter;
       var matchesLoc;
@@ -2014,6 +1999,72 @@
       if (bDown && !aDown) return -1;
       return a.addedAt - b.addedAt;
     });
+    return visible;
+  }
+
+  async function setWaitlistPosition(id, newPos){
+    var visibleNow = getVisibleWaitlist();
+    var idx = visibleNow.findIndex(function(w){ return w.id === id; });
+    if (idx < 0) return;
+    var target = Math.max(1, Math.min(visibleNow.length, newPos)) - 1;
+    if (target === idx) return;
+    var entry = visibleNow.splice(idx, 1)[0];
+    visibleNow.splice(target, 0, entry);
+    // Re-sequence addedAt for everyone currently visible so the typed
+    // order sticks. ("Drop Down on List" status still pins to the bottom
+    // regardless, same as before.)
+    var base = Date.now() - visibleNow.length * 1000;
+    visibleNow.forEach(function(w, i){ w.addedAt = base + i * 1000; });
+    await saveWaitlist();
+  }
+
+  function renderWaitlistView(){
+    var html = renderSectionToggle();
+
+    html += '<div class="toolbar">';
+    html += '<input type="text" id="wlSearchInput" placeholder="Search by name, phone, or lot #…" value="'+escapeAttr(state.search)+'">';
+    html += '<select id="wlLocFilter">';
+    html += '<option value="all"'+(state.waitlistFilterLoc==='all'?' selected':'')+'>Any location</option>';
+    html += renderLocationFilterOptions(state.waitlistFilterLoc);
+    if (can('manageLocations')){
+      html += '<option disabled>──────────</option>';
+      html += '<option value="__add_location__">+ Add new location…</option>';
+      html += '<option value="__rename_location__">✎ Rename this location…</option>';
+      html += '<option value="__remove_location__">🗑 Delete this location…</option>';
+    }
+    html += '</select>';
+    ['all','waiting','contacted','offered','placed','dropped','denied'].forEach(function(f){
+      var label = f==='all' ? 'All' : WAITLIST_STATUSES[f];
+      html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
+    });
+    html += '<button class="btn secondary small" data-action="wl-export">Export CSV</button>';
+    if (can('addWaitlist')){
+      html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="wlImportCsvInput" style="display:none;"></label>';
+      if (state.lastWaitlistImportBackup){
+        html += '<button class="btn secondary small undo-btn" data-action="undo-waitlist-import">Undo last import</button>';
+      }
+    }
+    html += '</div>';
+
+    if (can('addWaitlist')){
+      html += '<div class="add-row">';
+      html += '<input type="text" id="wlNewName" placeholder="Member name">';
+      html += '<input type="text" id="wlNewPhone" placeholder="Phone">';
+      html += '<input type="text" id="wlNewLot" placeholder="Lot #">';
+      html += '<select id="wlNewLoc">';
+      html += renderLocationOptionsGrouped(LOCATIONS[0] ? LOCATIONS[0].id : null);
+      if (can('manageLocations')){
+        html += '<option disabled>──────────</option>';
+        html += '<option value="__add_location__">+ Add new location…</option>';
+      }
+      html += '</select>';
+      html += '<button class="btn" data-action="wl-add">+ Add to waitlist</button>';
+      html += '</div>';
+    } else if (!state.isStaff){
+      html += '<div class="readonly-banner">👁 View only — log in above to add or edit waitlist entries.</div>';
+    }
+
+    var visible = getVisibleWaitlist();
 
     html += '<div class="status-bar"><span><strong>'+state.waitlist.length+'</strong> total on waitlist</span>';
     html += '<span><strong>'+state.waitlist.filter(function(w){return w.status==='waiting';}).length+'</strong> waiting</span>';
@@ -2029,7 +2080,13 @@
         var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
         var dis = can('editWaitlist') ? '' : ' disabled';
         html += '<div class="wl-row" data-id="'+w.id+'">';
-        html += '<div class="wl-position">#'+(i+1)+'</div>';
+        html += '<div class="wl-position">';
+        if (can('editWaitlist')){
+          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+visible.length+'" value="'+(i+1)+'" data-action="wl-set-position" data-id="'+w.id+'">';
+        } else {
+          html += '#'+(i+1);
+        }
+        html += '</div>';
         html += '<div class="wl-main">';
         html += '<div class="wl-name-row">';
         html += '<input type="text" name="wl-name" data-field="name" value="'+escapeAttr(w.name)+'" placeholder="Name"'+dis+'>';
@@ -2164,6 +2221,30 @@
       });
     }
 
+    var undoWaitlistImportBtn = document.querySelector('[data-action="undo-waitlist-import"]');
+    if (undoWaitlistImportBtn){
+      undoWaitlistImportBtn.addEventListener('click', function(){
+        var backup = state.lastWaitlistImportBackup;
+        if (!backup) return;
+        showConfirm('Undo the last waitlist import? This restores the waitlist to how it was right before that import.', async function(){
+          state.waitlist = backup.snapshot;
+          state.lastWaitlistImportBackup = null;
+          await saveWaitlist();
+          render();
+        });
+      });
+    }
+
+    document.querySelectorAll('[data-action="wl-set-position"]').forEach(function(inp){
+      inp.addEventListener('change', async function(){
+        var id = inp.getAttribute('data-id');
+        var newPos = parseInt(inp.value, 10);
+        if (!newPos || isNaN(newPos)){ render(); return; }
+        await setWaitlistPosition(id, newPos);
+        render();
+      });
+    });
+
     var wlNewLocSelect = document.getElementById('wlNewLoc');
     if (wlNewLocSelect){
       wlNewLocSelect.addEventListener('change', async function(){
@@ -2284,6 +2365,19 @@
   // Reads either a real CSV (as text) or a real Excel file (.xlsx/.xls, as
   // binary via SheetJS) and resolves to the same shape either way: an array
   // of rows, each row an array of plain string cell values.
+  // Decodes raw file bytes as text, preferring strict UTF-8. If the bytes
+  // aren't valid UTF-8 (a very common issue with CSVs exported from Excel,
+  // which often use Windows-1252 instead), falls back to that encoding
+  // instead of silently producing garbled/mangled characters.
+  function decodeTextSmart(buffer){
+    var bytes = new Uint8Array(buffer);
+    try {
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch(e){
+      return new TextDecoder('windows-1252').decode(bytes);
+    }
+  }
+
   function readSpreadsheetFile(file){
     return new Promise(function(resolve, reject){
       var name = (file.name || '').toLowerCase();
@@ -2295,10 +2389,10 @@
         var textReader = new FileReader();
         textReader.onerror = function(){ reject(new Error('read failed')); };
         textReader.onload = function(){
-          try { resolve(parseCsv(textReader.result)); }
+          try { resolve(parseCsv(decodeTextSmart(textReader.result))); }
           catch(e){ reject(e); }
         };
-        textReader.readAsText(file);
+        textReader.readAsArrayBuffer(file);
         return;
       }
 
@@ -2338,6 +2432,11 @@
       if (!rows.length){ showAlert('That file has no rows.'); return; }
       var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'id') ? 1 : 0;
       var units = state.data[loc.id] || (state.data[loc.id] = []);
+      state.lastRackImportBackup = {
+        locId: loc.id,
+        label: loc.label,
+        snapshot: JSON.parse(JSON.stringify(units))
+      };
       var added = 0, updated = 0;
       for (var i = startIdx; i < rows.length; i++){
         var r = rows[i];
@@ -2400,6 +2499,10 @@
     readSpreadsheetFile(file).then(async function(rows){
       if (!rows.length){ showAlert('That file has no rows.'); return; }
       var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'position') ? 1 : 0;
+      state.lastWaitlistImportBackup = {
+        label: 'waitlist',
+        snapshot: JSON.parse(JSON.stringify(state.waitlist))
+      };
       var addedCount = 0;
       for (var i = startIdx; i < rows.length; i++){
         var r = rows[i];
