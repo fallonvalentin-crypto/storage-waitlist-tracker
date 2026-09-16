@@ -402,8 +402,6 @@
   var DEFAULT_LOCATIONS = [
     { id: 'holiday-park', label: 'Roamingwood Marina Rack', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
     { id: 'getaway-park', label: 'Getaway Park', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
-    { id: 'deerfield-lake', label: 'Deerfield Lake', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
-    { id: 'brooks-lake', label: 'Brooks Lake', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
     { id: 'dry-dock', label: 'Dry Dock', unitLabel: 'Space #', category: 'Laurel Park Camp Ground' },
     { id: 'laurel-park-campground', label: 'Laurel Park Camp Ground', unitLabel: 'Site #', category: 'Laurel Park Camp Ground' }
   ];
@@ -428,8 +426,9 @@
   // Fills in categories for locations saved before categories existed, and
   // adds any brand-new default locations (like Laurel Park Camp Ground) that
   // weren't part of an older saved config yet.
-  var CATEGORY_MOVE_VERSION = 3; // bump this to force a one-time re-categorization/label fix below
+  var CATEGORY_MOVE_VERSION = 4; // bump this to force a one-time re-categorization/label/removal fix below
   var FORCED_CATEGORY_MOVES = { 'dry-dock': 'Laurel Park Camp Ground' };
+  var FORCED_REMOVALS = ['deerfield-lake', 'brooks-lake'];
 
   async function migrateLocationCategories(){
     var changed = false;
@@ -462,6 +461,19 @@
       LOCATIONS.forEach(function(l){
         if (l.unitLabel === 'Rack #') l.unitLabel = 'Site #';
       });
+      // One-time removal: drop these locations (and their saved rack/space
+      // data) entirely, if they're still present from earlier setup.
+      FORCED_REMOVALS.forEach(function(id){
+        var idx = LOCATIONS.findIndex(function(l){ return l.id === id; });
+        if (idx > -1){
+          LOCATIONS.splice(idx, 1);
+          try { window.storage.delete('audit:' + id, true); } catch(e3){}
+          try { window.storage.delete('audit-ver:' + id, true); } catch(e4){}
+        }
+      });
+      if (LOCATIONS.length === 0){
+        LOCATIONS.push(Object.assign({}, DEFAULT_LOCATIONS[0]));
+      }
       changed = true;
       try { await window.storage.set('category-move-version', String(CATEGORY_MOVE_VERSION), true); } catch(e2){}
     }
@@ -1444,6 +1456,15 @@
       await loadLocation(LOCATIONS[i].id);
     }
     await loadWaitlist();
+    var validLocIds = LOCATIONS.map(function(l){ return l.id; });
+    var orphanFixed = false;
+    state.waitlist.forEach(function(w){
+      if (validLocIds.indexOf(w.locationId) === -1){
+        w.locationId = LOCATIONS[0].id;
+        orphanFixed = true;
+      }
+    });
+    if (orphanFixed) await saveWaitlist();
     await loadUserAccounts();
     await tryAutoLogin();
     await loadStaffPermissions();
