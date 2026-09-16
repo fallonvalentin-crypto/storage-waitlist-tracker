@@ -485,7 +485,6 @@
     try { await window.storage.set('location-config', JSON.stringify(LOCATIONS), true); } catch(e){}
   }
 
-  var SEED_VERSIONS = { 'holiday-park': 2 }; // bump when a location's known layout changes
   var WAITLIST_STATUSES = { waiting: 'Waiting', contacted: 'Contacted', offered: 'Offered a spot', placed: 'Placed', dropped: 'Drop Down on List', denied: 'Rejected' };
   var waitlistColors = { waiting: '#2F6FAD', contacted: '#7B4FA0', offered: '#B8960C', placed: '#2E8F4F', dropped: '#6B7280', denied: '#C0392B' };
 
@@ -503,7 +502,7 @@
       for (var l=1;l<=6;l++) out2.push(mk('L-'+l));
       return out2;
     }
-    return []; // Getaway Park, Deerfield Lake, and Brooks Lake start empty — add spaces as they're mapped
+    return []; // Any other park (e.g. Getaway Park, or a newly added one) starts empty — add sites as they're mapped
   }
 
   function slugify(name){
@@ -543,8 +542,8 @@
   var root = document.getElementById('root');
   var modalRoot = document.getElementById('modalRoot');
 
-  function showPrompt(message, defaultValue, onConfirm, masked){
-    state.modal = { kind: 'prompt', message: message, value: defaultValue || '', onConfirm: onConfirm, masked: !!masked };
+  function showPrompt(message, defaultValue, onConfirm, masked, confirmLabel){
+    state.modal = { kind: 'prompt', message: message, value: defaultValue || '', onConfirm: onConfirm, masked: !!masked, confirmLabel: confirmLabel };
     renderModal();
   }
 
@@ -607,7 +606,7 @@
     if (m.kind !== 'alert'){
       html += '<button class="btn secondary small" id="modalCancel">Cancel</button>';
     }
-    html += '<button class="btn small" id="modalConfirm">'+(m.kind==='alert'?'OK':(m.kind==='confirm'?'Confirm':(m.kind==='login'?'Log in':'Add')))+'</button>';
+    html += '<button class="btn small" id="modalConfirm">'+(m.confirmLabel || (m.kind==='alert'?'OK':(m.kind==='confirm'?'Confirm':(m.kind==='login'?'Log in':'Add'))))+'</button>';
     html += '</div></div></div>';
     modalRoot.innerHTML = html;
 
@@ -1406,34 +1405,19 @@
     try { await window.storage.set('waitlist', JSON.stringify(state.waitlist), true); } catch(e){}
   }
 
+  // Seeds a park's default rack list ONLY the very first time it's ever
+  // loaded (i.e. when there's genuinely no saved data for it yet). This
+  // deliberately never re-seeds based on a version number, so real,
+  // already-imported data can never be silently wiped by a future default
+  // layout change.
   async function loadLocation(locId){
-    var desiredVersion = SEED_VERSIONS[locId] || 1;
-    var storedVersion = 1;
-    try {
-      var vRes = await window.storage.get('audit-ver:' + locId, true);
-      storedVersion = parseInt(vRes.value, 10) || 1;
-    } catch(e){ storedVersion = 1; } // no version on file yet — treat as baseline, not "needs reseed"
-
-    if (storedVersion < desiredVersion){
-      var seeded = seedFor(locId);
-      state.data[locId] = seeded;
-      try {
-        await window.storage.set('audit:' + locId, JSON.stringify(seeded), true);
-        await window.storage.set('audit-ver:' + locId, String(desiredVersion), true);
-      } catch(e2){}
-      return;
-    }
-
     try {
       var res = await window.storage.get('audit:' + locId, true);
       state.data[locId] = JSON.parse(res.value);
     } catch(e){
-      var seeded2 = seedFor(locId);
-      state.data[locId] = seeded2;
-      try {
-        await window.storage.set('audit:' + locId, JSON.stringify(seeded2), true);
-        await window.storage.set('audit-ver:' + locId, String(desiredVersion), true);
-      } catch(e3){}
+      var seeded = seedFor(locId);
+      state.data[locId] = seeded;
+      try { await window.storage.set('audit:' + locId, JSON.stringify(seeded), true); } catch(e2){}
     }
   }
 
@@ -1697,6 +1681,30 @@
     });
   }
 
+  // Parses input like "1-40, 1k-132k, 1p-10p, 55" into a Set of exact,
+  // uppercased site IDs. A bare number means a plain/Larger Site; a "k"
+  // suffix means Kayak Site; a "p" suffix means Pedal Boat Site.
+  function parseSiteRanges(text){
+    var ids = new Set();
+    (text||'').split(',').forEach(function(part){
+      part = part.trim();
+      if (!part) return;
+      var m = part.match(/^(\d+)\s*([a-zA-Z]?)\s*-\s*(\d+)\s*([a-zA-Z]?)$/);
+      if (m){
+        var lo = parseInt(m[1],10), hi = parseInt(m[3],10);
+        var suffix = (m[2] || m[4] || '').toUpperCase();
+        if (lo > hi){ var t=lo; lo=hi; hi=t; }
+        for (var n=lo; n<=hi; n++) ids.add(n + suffix);
+        return;
+      }
+      var m2 = part.match(/^(\d+)\s*([a-zA-Z]?)$/);
+      if (m2){
+        ids.add(parseInt(m2[1],10) + (m2[2]||'').toUpperCase());
+      }
+    });
+    return ids;
+  }
+
   function getVisibleUnits(units){
     return units.filter(function(u){
       var matchesFilter = state.filter==='all' || u.status===state.filter;
@@ -1739,6 +1747,9 @@
     }
     if (can('editRackFields')){
       html += '<button class="btn secondary small" data-action="mark-all-paid">Mark all paid</button>';
+    }
+    if (can('deleteRack')){
+      html += '<button class="btn secondary small undo-btn" data-action="delete-all-units">Delete Selected Sites</button>';
     }
     html += '</div>';
 
@@ -1864,6 +1875,34 @@
           await saveLocation(loc.id);
           render();
         });
+      });
+    }
+
+    var deleteAllBtn = document.querySelector('[data-action="delete-all-units"]');
+    if (deleteAllBtn){
+      deleteAllBtn.addEventListener('click', function(){
+        showPrompt('Enter the range of sites to delete. Use a plain number for a Larger Site, "k" for a Kayak Site, or "p" for a Pedal Boat Site — e.g. "1-40" or "1k-132k, 1p-10p". Leave blank to use the current filter/search instead.', '', function(rangeText){
+          var targets;
+          if (rangeText && rangeText.trim()){
+            var wanted = parseSiteRanges(rangeText);
+            if (wanted.size === 0){
+              showAlert('Couldn\'t read that as a range. Try something like "1-40" or "1k-132k, 1p-10p".');
+              return;
+            }
+            targets = units.filter(function(u){
+              return wanted.has(String(u.id).toUpperCase());
+            });
+          } else {
+            targets = getVisibleUnits(units);
+          }
+          if (!targets.length){ showAlert('Nothing matched.'); return; }
+          showConfirm('Delete '+targets.length+' matching site(s) in "'+loc.label+'"? This can\'t be undone.', async function(){
+            var targetIds = targets.map(function(u){ return u.id; });
+            state.data[loc.id] = units.filter(function(u){ return targetIds.indexOf(u.id) === -1; });
+            await saveLocation(loc.id);
+            render();
+          });
+        }, false, 'Delete');
       });
     }
 
