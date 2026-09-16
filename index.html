@@ -2345,13 +2345,11 @@
 
       var removeBtn = rowEl.querySelector('[data-action="wl-remove"]');
       if (removeBtn){
-        removeBtn.addEventListener('click', function(){
-          showConfirm('Remove '+entry.name+' from the waitlist?', async function(){
-            var idx = state.waitlist.findIndex(function(w){ return w.id === id; });
-            if (idx>-1) state.waitlist.splice(idx,1);
-            await saveWaitlist();
-            render();
-          });
+        removeBtn.addEventListener('click', async function(){
+          var idx = state.waitlist.findIndex(function(w){ return w.id === id; });
+          if (idx>-1) state.waitlist.splice(idx,1);
+          await saveWaitlist();
+          render();
         });
       }
     });
