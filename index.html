@@ -1697,6 +1697,15 @@
     });
   }
 
+  function getVisibleUnits(units){
+    return units.filter(function(u){
+      var matchesFilter = state.filter==='all' || u.status===state.filter;
+      var q = state.search.trim().toLowerCase();
+      var matchesSearch = !q || u.id.toLowerCase().indexOf(q)>-1 || (u.lot||'').toLowerCase().indexOf(q)>-1;
+      return matchesFilter && matchesSearch;
+    });
+  }
+
   function render(){
     if (!state.currentUser){
       renderLoginGate();
@@ -1725,6 +1734,12 @@
         html += '<button class="btn secondary small undo-btn" data-action="undo-rack-import">Undo last import</button>';
       }
     }
+    if (can('markAudited')){
+      html += '<button class="btn secondary small" data-action="mark-all-audited">Mark all audited</button>';
+    }
+    if (can('editRackFields')){
+      html += '<button class="btn secondary small" data-action="mark-all-paid">Mark all paid</button>';
+    }
     html += '</div>';
 
     // Add row
@@ -1750,12 +1765,7 @@
     html += '</div>';
 
     // Filter + search
-    var visible = units.filter(function(u){
-      var matchesFilter = state.filter==='all' || u.status===state.filter;
-      var q = state.search.trim().toLowerCase();
-      var matchesSearch = !q || u.id.toLowerCase().indexOf(q)>-1 || (u.lot||'').toLowerCase().indexOf(q)>-1;
-      return matchesFilter && matchesSearch;
-    });
+    var visible = getVisibleUnits(units);
 
     if (visible.length === 0){
       html += '<div class="empty-state">No spaces match. Add one above, or clear your search/filter.</div>';
@@ -1826,6 +1836,36 @@
     document.querySelectorAll('[data-action="export"]').forEach(function(btn){
       btn.addEventListener('click', function(){ exportCsv(loc, units); });
     });
+
+    var markAllAuditedBtn = document.querySelector('[data-action="mark-all-audited"]');
+    if (markAllAuditedBtn){
+      markAllAuditedBtn.addEventListener('click', function(){
+        var targets = getVisibleUnits(units);
+        if (!targets.length){ showAlert('No spaces match the current filter/search.'); return; }
+        showPrompt('Mark all '+targets.length+' matching space(s) as audited. Your initials:', '', async function(initials){
+          var today = todayStr();
+          targets.forEach(function(u){
+            u.auditedOn = today;
+            u.auditedBy = initials;
+          });
+          await saveLocation(loc.id);
+          render();
+        });
+      });
+    }
+
+    var markAllPaidBtn = document.querySelector('[data-action="mark-all-paid"]');
+    if (markAllPaidBtn){
+      markAllPaidBtn.addEventListener('click', function(){
+        var targets = getVisibleUnits(units);
+        if (!targets.length){ showAlert('No spaces match the current filter/search.'); return; }
+        showConfirm('Mark all '+targets.length+' matching space(s) as Paid?', async function(){
+          targets.forEach(function(u){ u.status = 'paid'; });
+          await saveLocation(loc.id);
+          render();
+        });
+      });
+    }
 
     var importCsvInput = document.getElementById('importCsvInput');
     if (importCsvInput){
