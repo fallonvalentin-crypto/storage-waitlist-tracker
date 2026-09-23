@@ -233,6 +233,28 @@
   .status-bar strong{color:var(--ink);}
 
   /* Waitlist */
+  .wl-loc-tabs{
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 4px;
+    padding-bottom:8px;border-bottom:2px solid var(--line);
+  }
+  .wl-loc-tab-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+  .wl-loc-tab-group-label{
+    font-size:0.68rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--dock-wood);
+    margin:0 2px 0 8px;font-weight:700;
+  }
+  .wl-loc-tab-group:first-child .wl-loc-tab-group-label{margin-left:0;}
+  .wl-loc-tab{
+    border:1.5px solid var(--line);background:#fff;border-radius:999px;
+    padding:6px 13px;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--ink);
+    white-space:nowrap;
+  }
+  .wl-loc-tab:hover{border-color:var(--dock-wood);}
+  .wl-loc-tab.active{background:var(--dock-wood);border-color:var(--dock-wood);color:#fff;}
+  .wl-loc-tab .wl-loc-tab-count{opacity:0.75;font-weight:500;margin-left:3px;}
+  .wl-loc-manage-select{
+    margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:6px;
+    font-size:0.78rem;background:#fff;
+  }
   .wl-list{display:flex;flex-direction:column;gap:8px;}
   .wl-row{
     background:#fff;border:2px solid var(--line);border-radius:9px;padding:10px 14px;
@@ -2180,10 +2202,11 @@
     return html;
   }
 
-  // Like renderLocationOptionsGrouped, but adds a category-level "All in <category>"
-  // option at the top of each group, so the waitlist can be filtered by a whole
-  // category (e.g. every Non-Power Storage Racks location) rather than one at a time.
-  function renderLocationFilterOptions(selectedValue){
+  // Renders the waitlist location switcher as a row of tabs (one per park,
+  // grouped by category, plus an "All" tab) instead of a dropdown — so
+  // switching which park's queue you're looking at is a single click, and
+  // each tab shows that park's own count so it reads like separate lists.
+  function renderLocationTabs(selectedValue){
     var categories = [];
     var byCategory = {};
     LOCATIONS.forEach(function(l){
@@ -2191,35 +2214,44 @@
       if (!byCategory[cat]){ byCategory[cat] = []; categories.push(cat); }
       byCategory[cat].push(l);
     });
-    var html = '';
+    var html = '<div class="wl-loc-tabs">';
+    html += '<button type="button" class="wl-loc-tab'+(selectedValue==='all'?' active':'')+'" data-action="wl-loc-tab" data-loc="all">All<span class="wl-loc-tab-count">'+state.waitlist.length+'</span></button>';
     categories.forEach(function(cat){
       var catValue = 'cat:' + cat;
-      html += '<optgroup label="'+escapeAttr(cat)+'">';
-      html += '<option value="'+escapeAttr(catValue)+'"'+(selectedValue===catValue?' selected':'')+'>— All in '+escapeHtml(cat)+' —</option>';
+      var catCount = state.waitlist.filter(function(w){
+        var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
+        return wLoc && (wLoc.category || 'Other') === cat;
+      }).length;
+      html += '<span class="wl-loc-tab-group-label">'+escapeHtml(cat)+'</span>';
+      html += '<div class="wl-loc-tab-group">';
+      html += '<button type="button" class="wl-loc-tab'+(selectedValue===catValue?' active':'')+'" data-action="wl-loc-tab" data-loc="'+escapeAttr(catValue)+'">All'+ '<span class="wl-loc-tab-count">'+catCount+'</span></button>';
       byCategory[cat].forEach(function(l){
-        html += '<option value="'+l.id+'"'+(selectedValue===l.id?' selected':'')+'>'+escapeHtml(l.label)+'</option>';
+        var count = state.waitlist.filter(function(w){ return w.locationId === l.id; }).length;
+        html += '<button type="button" class="wl-loc-tab'+(selectedValue===l.id?' active':'')+'" data-action="wl-loc-tab" data-loc="'+l.id+'">'+escapeHtml(l.label)+'<span class="wl-loc-tab-count">'+count+'</span></button>';
       });
-      html += '</optgroup>';
+      html += '</div>';
     });
+    html += '</div>';
     return html;
   }
 
-  // The waitlist's one true order: everyone, sorted by date added, with
-  // "Drop Down on List" pinned to the bottom regardless. This is what
-  // decides each person's real place-in-line number. Search, the status
-  // filter, and the location filter only ever decide which ROWS are shown
-  // on screen — they must never affect this ordering, or a person's
-  // number would appear to change just because you typed something into
-  // the search box.
-  function getFullWaitlistOrder(){
-    var all = state.waitlist.slice();
-    all.sort(function(a,b){
+  // Each location/park keeps its OWN waitlist numbering (1, 2, 3… within
+  // that location only) — not one shared number across every park. This
+  // is the true order within a single location: everyone requesting it,
+  // sorted by date added, with "Drop Down on List" pinned to the bottom
+  // regardless. Search, the status filter, and the location filter only
+  // ever decide which ROWS are shown on screen — they must never affect
+  // this ordering, or a person's number would appear to change just
+  // because you typed something into the search box.
+  function getLocationWaitlistOrder(locationId){
+    var group = state.waitlist.filter(function(w){ return w.locationId === locationId; });
+    group.sort(function(a,b){
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
       if (bDown && !aDown) return -1;
       return a.addedAt - b.addedAt;
     });
-    return all;
+    return group;
   }
 
   function getVisibleWaitlist(){
@@ -2239,49 +2271,53 @@
       var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
       return matchesFilter && matchesLoc && matchesSearch;
     });
-    // Keep the same relative order as the true full list, so a filtered
-    // view still reads top-to-bottom in real queue order.
-    var fullOrder = getFullWaitlistOrder();
+    // Group by location (in the order locations are defined), and within
+    // each location keep that location's own true queue order — so the
+    // list reads as consecutive per-park queues, e.g. Getaway Park's
+    // 1..N, then Holiday Park's 1..N, rather than one interleaved list.
+    var locOrderCache = {};
     visible.sort(function(a,b){
-      return fullOrder.indexOf(a) - fullOrder.indexOf(b);
+      if (a.locationId !== b.locationId){
+        var ai = LOCATIONS.findIndex(function(l){ return l.id === a.locationId; });
+        var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
+        return ai - bi;
+      }
+      if (!locOrderCache[a.locationId]) locOrderCache[a.locationId] = getLocationWaitlistOrder(a.locationId);
+      var order = locOrderCache[a.locationId];
+      return order.indexOf(a) - order.indexOf(b);
     });
     return visible;
   }
 
-  // Repositions someone within the TRUE full waitlist (never the filtered/
-  // searched subset), so typing a new number always means "this is their
-  // real place in the whole line," regardless of what's currently
-  // filtered or searched on screen.
+  // Repositions someone within their OWN location's true queue (never the
+  // filtered/searched subset, and never mixed with other locations' queues),
+  // so typing a new number always means "this is their real place in THIS
+  // park's line," regardless of what's currently filtered or searched.
   async function setWaitlistPosition(id, newPos){
-    var fullOrder = getFullWaitlistOrder();
-    var idx = fullOrder.findIndex(function(w){ return w.id === id; });
+    var entry = state.waitlist.find(function(w){ return w.id === id; });
+    if (!entry) return;
+    var order = getLocationWaitlistOrder(entry.locationId);
+    var idx = order.findIndex(function(w){ return w.id === id; });
     if (idx < 0) return;
-    var target = Math.max(1, Math.min(fullOrder.length, newPos)) - 1;
+    var target = Math.max(1, Math.min(order.length, newPos)) - 1;
     if (target === idx) return;
-    var entry = fullOrder.splice(idx, 1)[0];
-    fullOrder.splice(target, 0, entry);
-    // Re-sequence addedAt for the whole list so the typed order sticks.
+    var moved = order.splice(idx, 1)[0];
+    order.splice(target, 0, moved);
+    // Re-sequence addedAt for just this location's group so the typed
+    // order sticks, without touching any other location's queue.
     // ("Drop Down on List" status still pins to the bottom regardless.)
-    var base = Date.now() - fullOrder.length * 1000;
-    fullOrder.forEach(function(w, i){ w.addedAt = base + i * 1000; });
+    var base = Date.now() - order.length * 1000;
+    order.forEach(function(w, i){ w.addedAt = base + i * 1000; });
     await saveWaitlist();
   }
 
   function renderWaitlistView(){
     var html = renderSectionToggle();
 
+    html += renderLocationTabs(state.waitlistFilterLoc);
+
     html += '<div class="toolbar">';
     html += '<input type="text" id="wlSearchInput" placeholder="Search by name, phone, or lot #…" value="'+escapeAttr(state.search)+'">';
-    html += '<select id="wlLocFilter">';
-    html += '<option value="all"'+(state.waitlistFilterLoc==='all'?' selected':'')+'>Any location</option>';
-    html += renderLocationFilterOptions(state.waitlistFilterLoc);
-    if (can('manageLocations')){
-      html += '<option disabled>──────────</option>';
-      html += '<option value="__add_location__">+ Add new location…</option>';
-      html += '<option value="__rename_location__">✎ Rename this location…</option>';
-      html += '<option value="__remove_location__">🗑 Delete this location…</option>';
-    }
-    html += '</select>';
     ['all','waiting','contacted','offered','placed','dropped','denied'].forEach(function(f){
       var label = f==='all' ? 'All' : WAITLIST_STATUSES[f];
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
@@ -2292,6 +2328,14 @@
       if (state.lastWaitlistImportBackup){
         html += '<button class="btn secondary small undo-btn" data-action="undo-waitlist-import">Undo last import</button>';
       }
+    }
+    if (can('manageLocations')){
+      html += '<select id="wlLocManage" class="wl-loc-manage-select">';
+      html += '<option value="">⚙ Manage locations…</option>';
+      html += '<option value="__add_location__">+ Add new location…</option>';
+      html += '<option value="__rename_location__">✎ Rename current tab\'s location…</option>';
+      html += '<option value="__remove_location__">🗑 Delete current tab\'s location…</option>';
+      html += '</select>';
     }
     html += '</div>';
 
@@ -2314,9 +2358,16 @@
     }
 
     var visible = getVisibleWaitlist();
-    var fullOrder = getFullWaitlistOrder();
+    // Build each location's own true position numbers (1..N within that
+    // location only) and remember each location's total count for the
+    // typeable box's upper bound.
     var truePositions = {};
-    fullOrder.forEach(function(w, i){ truePositions[w.id] = i+1; });
+    var locCounts = {};
+    LOCATIONS.forEach(function(l){
+      var order = getLocationWaitlistOrder(l.id);
+      locCounts[l.id] = order.length;
+      order.forEach(function(w, i){ truePositions[w.id] = i+1; });
+    });
 
     html += '<div class="status-bar"><span><strong>'+state.waitlist.length+'</strong> total on waitlist</span>';
     html += '<span><strong>'+state.waitlist.filter(function(w){return w.status==='waiting';}).length+'</strong> waiting</span>';
@@ -2332,10 +2383,11 @@
         var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
         var dis = can('editWaitlist') ? '' : ' disabled';
         var truePos = truePositions[w.id] || (i+1);
+        var locMax = locCounts[w.locationId] || truePos;
         html += '<div class="wl-row" data-id="'+w.id+'">';
         html += '<div class="wl-position">';
         if (can('editWaitlist')){
-          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+fullOrder.length+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
+          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+locMax+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
         } else {
           html += '#'+truePos;
         }
@@ -2384,10 +2436,18 @@
       });
     });
 
-    var wlLocFilter = document.getElementById('wlLocFilter');
-    if (wlLocFilter){
-      wlLocFilter.addEventListener('change', function(){
-        var val = wlLocFilter.value;
+    document.querySelectorAll('[data-action="wl-loc-tab"]').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        state.waitlistFilterLoc = tab.getAttribute('data-loc');
+        render();
+      });
+    });
+
+    var wlLocManage = document.getElementById('wlLocManage');
+    if (wlLocManage){
+      wlLocManage.addEventListener('change', function(){
+        var val = wlLocManage.value;
+        wlLocManage.value = '';
 
         if (val === '__add_location__'){
           addNewLocationViaPrompt().then(function(newId){
@@ -2399,12 +2459,10 @@
 
         if (val === '__rename_location__'){
           if (state.waitlistFilterLoc === 'all' || state.waitlistFilterLoc.indexOf('cat:') === 0){
-            wlLocFilter.value = state.waitlistFilterLoc;
-            showAlert('Pick a specific location (not "Any location" or a category) from the dropdown first, then choose "Rename this location…".');
+            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Rename current tab\'s location…".');
             return;
           }
           var current = LOCATIONS.find(function(l){ return l.id === state.waitlistFilterLoc; });
-          wlLocFilter.value = state.waitlistFilterLoc;
           showPrompt('Rename this location:', current.label, async function(newName){
             if (!newName) return;
             current.label = newName;
@@ -2416,17 +2474,14 @@
 
         if (val === '__remove_location__'){
           if (state.waitlistFilterLoc === 'all' || state.waitlistFilterLoc.indexOf('cat:') === 0){
-            wlLocFilter.value = state.waitlistFilterLoc;
-            showAlert('Pick a specific location (not "Any location" or a category) from the dropdown first, then choose "Delete this location…".');
+            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Delete current tab\'s location…".');
             return;
           }
           if (LOCATIONS.length <= 1){
-            wlLocFilter.value = state.waitlistFilterLoc;
             showAlert('At least one location has to stay — add another before deleting this one.');
             return;
           }
           var target = LOCATIONS.find(function(l){ return l.id === state.waitlistFilterLoc; });
-          wlLocFilter.value = state.waitlistFilterLoc;
           showConfirm('Delete "'+target.label+'"? This also removes its rack/space audit data. Waitlist members requesting it will be reassigned to another location.', async function(){
             var idx = LOCATIONS.findIndex(function(l){ return l.id === target.id; });
             if (idx>-1) LOCATIONS.splice(idx,1);
@@ -2443,9 +2498,6 @@
           });
           return;
         }
-
-        state.waitlistFilterLoc = val;
-        render();
       });
     }
 
