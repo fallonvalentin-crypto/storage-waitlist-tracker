@@ -315,6 +315,14 @@
   .um-row-actions button[data-action="um-reset-pw"], .um-row-actions button[data-action="um-set-recovery"]{color:var(--assigned);}
   .um-recovery-set{font-size:0.75rem;}
   .um-hint{font-size:0.74rem;color:var(--dock-wood);margin-bottom:10px;line-height:1.4;}
+  .activity-log-list{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .activity-log-row{
+    border:1.5px solid var(--line);border-radius:7px;padding:8px 10px;font-size:0.82rem;
+  }
+  .activity-log-when{font-size:0.7rem;color:var(--dock-wood);font-weight:700;margin-bottom:2px;}
+  .activity-log-who{font-weight:700;color:var(--ink);}
+  .activity-log-role{font-weight:500;color:var(--dock-wood);}
+  .activity-log-action{color:var(--ink);margin-top:2px;}
   .branding-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
   .branding-field label{font-size:0.78rem;font-weight:700;color:var(--dock-wood);}
   .branding-field input[type="text"]{
@@ -483,6 +491,55 @@
 
   async function saveLocationConfig(){
     try { await window.storage.set('location-config', JSON.stringify(LOCATIONS), true); } catch(e){}
+    logActivity('Updated park/location settings');
+  }
+
+  var ACTIVITY_LOG_MAX = 400;
+
+  async function loadActivityLog(){
+    try {
+      var res = await window.storage.get('activity-log', true);
+      var parsed = JSON.parse(res.value);
+      state.activityLog = Array.isArray(parsed) ? parsed : [];
+    } catch(e){
+      state.activityLog = [];
+    }
+  }
+
+  async function saveActivityLogToStorage(){
+    try { await window.storage.set('activity-log', JSON.stringify(state.activityLog), true); } catch(e){}
+  }
+
+  // Records one line in the activity log: who (username/role), what
+  // (a short description), when, and — for login events — their IP.
+  // actorOverride lets login/logout log an entry using the account that was
+  // just logged in/out even after state.currentUser has already changed.
+  async function logActivity(description, actorOverride, ip){
+    var actor = actorOverride || state.currentUser;
+    if (!actor) return;
+    var entry = {
+      time: new Date().toISOString(),
+      username: actor.username,
+      role: actor.role,
+      action: description
+    };
+    if (ip) entry.ip = ip;
+    state.activityLog.unshift(entry);
+    if (state.activityLog.length > ACTIVITY_LOG_MAX) state.activityLog = state.activityLog.slice(0, ACTIVITY_LOG_MAX);
+    await saveActivityLogToStorage();
+  }
+
+  // Asks a public IP-lookup service what IP the request came from. There is
+  // no way for a website to see a visitor's IP on its own — this calls
+  // ipify.org, a well-known free service made for exactly this purpose.
+  async function getVisitorIP(){
+    try {
+      var res = await fetch('https://api.ipify.org?format=json');
+      var data = await res.json();
+      return data.ip || 'unknown';
+    } catch(e){
+      return 'unknown';
+    }
   }
 
   var WAITLIST_STATUSES = { waiting: 'Waiting', contacted: 'Contacted', offered: 'Offered a spot', placed: 'Placed', dropped: 'Drop Down on List', denied: 'Rejected' };
@@ -536,6 +593,7 @@
     isStaff: false,
     lastRackImportBackup: null, // { locId, label, snapshot } — cleared on undo or reload
     lastWaitlistImportBackup: null, // { label, snapshot } — cleared on undo or reload
+    activityLog: [],
     loading: true
   };
 
@@ -573,6 +631,11 @@
 
     if (m.kind === 'branding'){
       renderBrandingModal();
+      return;
+    }
+
+    if (m.kind === 'activityLog'){
+      renderActivityLogModal();
       return;
     }
 
@@ -696,6 +759,7 @@
 
   async function saveSiteMaps(){
     try { await window.storage.set('site-maps', JSON.stringify(siteMaps), true); } catch(e){}
+    logActivity('Updated a site map');
   }
 
   // Downscales/recompresses an uploaded image client-side (via canvas) before
@@ -793,6 +857,7 @@
 
   async function saveBranding(){
     try { await window.storage.set('branding-config', JSON.stringify(branding), true); } catch(e){}
+    logActivity('Updated branding settings');
   }
 
   function applyBranding(){
@@ -871,6 +936,7 @@
 
   async function saveStaffPermissions(){
     try { await window.storage.set('staff-permissions', JSON.stringify(staffPermissions), true); } catch(e){}
+    logActivity('Updated Staff permissions');
   }
 
   async function loadSecondaryAdminPermissions(){
@@ -885,6 +951,7 @@
 
   async function saveSecondaryAdminPermissions(){
     try { await window.storage.set('secondary-admin-permissions', JSON.stringify(secondaryAdminPermissions), true); } catch(e){}
+    logActivity('Updated Secondary Admin permissions');
   }
 
   function roleLabel(role){
@@ -974,6 +1041,47 @@
   function showBrandingEditor(){
     state.modal = { kind: 'branding' };
     renderModal();
+  }
+
+  function showActivityLog(){
+    state.modal = { kind: 'activityLog' };
+    renderModal();
+  }
+
+  function renderActivityLogModal(){
+    var html = '<div class="modal-overlay"><div class="modal-card wide">';
+    html += '<div class="um-title">Activity Log</div>';
+    html += '<div class="um-hint">Main Admin only. Shows who logged in (with their IP address) and who made changes, most recent first. Kept to the last '+ACTIVITY_LOG_MAX+' entries.</div>';
+    if (!state.activityLog.length){
+      html += '<div class="um-hint">Nothing recorded yet.</div>';
+    } else {
+      html += '<div class="activity-log-list">';
+      state.activityLog.forEach(function(entry){
+        var d = new Date(entry.time);
+        var when = isNaN(d.getTime()) ? entry.time : d.toLocaleString();
+        html += '<div class="activity-log-row">';
+        html += '<div class="activity-log-when">'+escapeHtml(when)+'</div>';
+        var knownRole = (entry.role === 'owner' || entry.role === 'admin' || entry.role === 'staff');
+        html += '<div class="activity-log-who">'+escapeHtml(entry.username)+' <span class="activity-log-role">('+escapeHtml(knownRole ? roleLabel(entry.role) : entry.role)+')</span></div>';
+        html += '<div class="activity-log-action">'+escapeHtml(entry.action)+(entry.ip ? ' — IP: '+escapeHtml(entry.ip) : '')+'</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="modal-actions">';
+    html += '<button class="btn secondary small" id="clearLogBtn">Clear log</button>';
+    html += '<button class="btn secondary small" id="activityLogCloseBtn">Close</button>';
+    html += '</div></div></div>';
+    modalRoot.innerHTML = html;
+
+    document.getElementById('activityLogCloseBtn').addEventListener('click', function(){ closeModal(); });
+    document.getElementById('clearLogBtn').addEventListener('click', function(){
+      showConfirm('Clear the entire activity log? This can\'t be undone.', async function(){
+        state.activityLog = [];
+        await saveActivityLogToStorage();
+        showActivityLog();
+      });
+    });
   }
 
   function showResetConfirmation(){
@@ -1084,6 +1192,7 @@
 
   async function saveUserAccounts(){
     try { await window.storage.set('user-accounts', JSON.stringify(userAccounts), true); } catch(e){}
+    logActivity('Updated staff/admin logins');
   }
 
   async function saveSession(username){
@@ -1136,6 +1245,7 @@
       }
       if (state.isOwner){
         html += '<button class="admin-toggle" id="secondaryAdminPermsBtn">🛡️ Secondary Admin permissions</button>';
+        html += '<button class="admin-toggle" id="activityLogBtn">📋 Activity Log</button>';
       }
       if (can('resetData')){
         html += '<button class="admin-toggle" id="resetDataBtn">🧹 Reset for new company</button>';
@@ -1147,10 +1257,12 @@
 
     document.getElementById('authBtn').addEventListener('click', function(){
       if (state.currentUser){
+        var outgoingUser = state.currentUser;
         applyCurrentUser(null);
         clearSession();
         renderAdminToggle();
         render();
+        logActivity('Logged out', outgoingUser);
         return;
       }
       showLogin(attemptLogin);
@@ -1197,6 +1309,11 @@
       secondaryAdminPermsBtn.addEventListener('click', function(){ showSecondaryAdminPermissionsEditor(); });
     }
 
+    var activityLogBtn = document.getElementById('activityLogBtn');
+    if (activityLogBtn){
+      activityLogBtn.addEventListener('click', function(){ showActivityLog(); });
+    }
+
     var resetDataBtn = document.getElementById('resetDataBtn');
     if (resetDataBtn){
       resetDataBtn.addEventListener('click', function(){ showResetConfirmation(); });
@@ -1212,8 +1329,14 @@
       if (creds.stayLoggedIn) saveSession(match.username);
       renderAdminToggle();
       render();
+      getVisitorIP().then(function(ip){
+        logActivity('Logged in', { username: match.username, role: match.role }, ip);
+      });
     } else if (creds.username || creds.password){
       showAlert('That username or password isn\'t right.');
+      getVisitorIP().then(function(ip){
+        logActivity('Failed login attempt (username: "'+(creds.username||'')+'")', { username: 'unknown', role: '—' }, ip);
+      });
     }
   }
 
@@ -1403,6 +1526,7 @@
 
   async function saveWaitlist(){
     try { await window.storage.set('waitlist', JSON.stringify(state.waitlist), true); } catch(e){}
+    logActivity('Updated the waitlist');
   }
 
   // Seeds a park's default rack list ONLY the very first time it's ever
@@ -1424,6 +1548,8 @@
   async function saveLocation(locId){
     try {
       await window.storage.set('audit:' + locId, JSON.stringify(state.data[locId]), true);
+      var loc = LOCATIONS.find(function(l){ return l.id === locId; });
+      logActivity('Updated sites in "'+(loc ? loc.label : locId)+'"');
     } catch(e){
       console.error('Save failed', e);
     }
@@ -1454,6 +1580,7 @@
     await loadStaffPermissions();
     await loadSecondaryAdminPermissions();
     await loadSiteMaps();
+    await loadActivityLog();
     state.loading = false;
     renderAdminToggle();
     render();
@@ -1802,9 +1929,10 @@
     h += '</div>';
 
     var optionColors = { vacant: '#2E8F4F', assigned: '#2F6FAD', repair: '#D9822B', removal: '#C0392B', paid: '#B8960C' };
+    var optionBgColors = { vacant: '#E1F0E5', assigned: '#E2EBF4', repair: '#F7E9D5', removal: '#F6E0DD', paid: '#F6F0D9' };
     h += '<div class="card-field"><label>Status</label><select class="status-select status-'+u.status+'" data-field="status"'+dis+'>';
     ['vacant','assigned','paid','repair','removal'].forEach(function(s){
-      h += '<option value="'+s+'"'+(u.status===s?' selected':'')+' style="color:'+optionColors[s]+'">'+statusLabel(s)+'</option>';
+      h += '<option value="'+s+'"'+(u.status===s?' selected':'')+' style="color:'+optionColors[s]+';background-color:'+optionBgColors[s]+';font-weight:700;">'+statusLabel(s)+'</option>';
     });
     h += '</select></div>';
 
@@ -2076,6 +2204,24 @@
     return html;
   }
 
+  // The waitlist's one true order: everyone, sorted by date added, with
+  // "Drop Down on List" pinned to the bottom regardless. This is what
+  // decides each person's real place-in-line number. Search, the status
+  // filter, and the location filter only ever decide which ROWS are shown
+  // on screen — they must never affect this ordering, or a person's
+  // number would appear to change just because you typed something into
+  // the search box.
+  function getFullWaitlistOrder(){
+    var all = state.waitlist.slice();
+    all.sort(function(a,b){
+      var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
+      if (aDown && !bDown) return 1;
+      if (bDown && !aDown) return -1;
+      return a.addedAt - b.addedAt;
+    });
+    return all;
+  }
+
   function getVisibleWaitlist(){
     var visible = state.waitlist.filter(function(w){
       var matchesFilter = state.filter==='all' || w.status===state.filter;
@@ -2093,28 +2239,31 @@
       var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
       return matchesFilter && matchesLoc && matchesSearch;
     });
+    // Keep the same relative order as the true full list, so a filtered
+    // view still reads top-to-bottom in real queue order.
+    var fullOrder = getFullWaitlistOrder();
     visible.sort(function(a,b){
-      var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
-      if (aDown && !bDown) return 1;
-      if (bDown && !aDown) return -1;
-      return a.addedAt - b.addedAt;
+      return fullOrder.indexOf(a) - fullOrder.indexOf(b);
     });
     return visible;
   }
 
+  // Repositions someone within the TRUE full waitlist (never the filtered/
+  // searched subset), so typing a new number always means "this is their
+  // real place in the whole line," regardless of what's currently
+  // filtered or searched on screen.
   async function setWaitlistPosition(id, newPos){
-    var visibleNow = getVisibleWaitlist();
-    var idx = visibleNow.findIndex(function(w){ return w.id === id; });
+    var fullOrder = getFullWaitlistOrder();
+    var idx = fullOrder.findIndex(function(w){ return w.id === id; });
     if (idx < 0) return;
-    var target = Math.max(1, Math.min(visibleNow.length, newPos)) - 1;
+    var target = Math.max(1, Math.min(fullOrder.length, newPos)) - 1;
     if (target === idx) return;
-    var entry = visibleNow.splice(idx, 1)[0];
-    visibleNow.splice(target, 0, entry);
-    // Re-sequence addedAt for everyone currently visible so the typed
-    // order sticks. ("Drop Down on List" status still pins to the bottom
-    // regardless, same as before.)
-    var base = Date.now() - visibleNow.length * 1000;
-    visibleNow.forEach(function(w, i){ w.addedAt = base + i * 1000; });
+    var entry = fullOrder.splice(idx, 1)[0];
+    fullOrder.splice(target, 0, entry);
+    // Re-sequence addedAt for the whole list so the typed order sticks.
+    // ("Drop Down on List" status still pins to the bottom regardless.)
+    var base = Date.now() - fullOrder.length * 1000;
+    fullOrder.forEach(function(w, i){ w.addedAt = base + i * 1000; });
     await saveWaitlist();
   }
 
@@ -2165,6 +2314,9 @@
     }
 
     var visible = getVisibleWaitlist();
+    var fullOrder = getFullWaitlistOrder();
+    var truePositions = {};
+    fullOrder.forEach(function(w, i){ truePositions[w.id] = i+1; });
 
     html += '<div class="status-bar"><span><strong>'+state.waitlist.length+'</strong> total on waitlist</span>';
     html += '<span><strong>'+state.waitlist.filter(function(w){return w.status==='waiting';}).length+'</strong> waiting</span>';
@@ -2179,12 +2331,13 @@
       visible.forEach(function(w, i){
         var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
         var dis = can('editWaitlist') ? '' : ' disabled';
+        var truePos = truePositions[w.id] || (i+1);
         html += '<div class="wl-row" data-id="'+w.id+'">';
         html += '<div class="wl-position">';
         if (can('editWaitlist')){
-          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+visible.length+'" value="'+(i+1)+'" data-action="wl-set-position" data-id="'+w.id+'">';
+          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+fullOrder.length+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
         } else {
-          html += '#'+(i+1);
+          html += '#'+truePos;
         }
         html += '</div>';
         html += '<div class="wl-main">';
