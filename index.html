@@ -676,6 +676,11 @@
       return;
     }
 
+    if (m.kind === 'restoreWaitlistLocations'){
+      renderRestoreWaitlistLocationsModal();
+      return;
+    }
+
     var html = '<div class="modal-overlay"><div class="modal-card">';
     html += '<div class="modal-message">'+escapeHtml(m.message)+'</div>';
     if (m.kind === 'prompt'){
@@ -865,6 +870,46 @@
         }
       });
     }
+  }
+
+  function showRestoreWaitlistLocationsModal(){
+    state.modal = { kind: 'restoreWaitlistLocations' };
+    renderModal();
+  }
+
+  // Lists locations that were removed from the Waitlist section's location
+  // list (but NOT deleted — their racks/spaces/audit history in Storage
+  // Audit are completely untouched) and lets an admin bring one back as a
+  // waitlist option again.
+  function renderRestoreWaitlistLocationsModal(){
+    var hidden = LOCATIONS.filter(function(l){ return l.hiddenFromWaitlist; });
+    var html = '<div class="modal-overlay"><div class="modal-card wide">';
+    html += '<div class="um-title">Locations removed from Waitlist</div>';
+    if (hidden.length === 0){
+      html += '<div class="um-hint">None right now — every location is available to pick in the Waitlist section.</div>';
+    } else {
+      html += '<div class="um-hint">These still exist in Storage Audit with all their racks/spaces and audit history untouched. Restoring one just makes it pickable in the Waitlist section again.</div>';
+      hidden.forEach(function(l){
+        html += '<div class="sitemap-upload-row"><span>'+escapeHtml(l.label)+'</span><button class="btn secondary small" data-action="restore-wl-loc" data-loc="'+l.id+'">↩ Restore to Waitlist</button></div>';
+      });
+    }
+    html += '<div class="modal-actions"><button class="btn secondary small" id="restoreWlLocCloseBtn">Close</button></div>';
+    html += '</div></div>';
+    modalRoot.innerHTML = html;
+
+    document.getElementById('restoreWlLocCloseBtn').addEventListener('click', function(){ closeModal(); });
+
+    document.querySelectorAll('[data-action="restore-wl-loc"]').forEach(function(btn){
+      btn.addEventListener('click', async function(){
+        var locId = btn.getAttribute('data-loc');
+        var loc = LOCATIONS.find(function(l){ return l.id === locId; });
+        if (loc){
+          delete loc.hiddenFromWaitlist;
+          await saveLocationConfig();
+        }
+        renderRestoreWaitlistLocationsModal();
+      });
+    });
   }
 
   async function loadBranding(){
@@ -1748,22 +1793,7 @@
           return;
         }
         showConfirm('Delete "'+target.label+'" and all of its racks/spaces? This can\'t be undone. Any waitlist members requesting it will be reassigned to another location.', async function(){
-          var idx = LOCATIONS.findIndex(function(l){ return l.id === locId; });
-          if (idx > -1) LOCATIONS.splice(idx, 1);
-          delete state.data[locId];
-          var fallbackId = LOCATIONS[0].id;
-          state.waitlist.forEach(function(w){
-            if (w.locationId === locId) w.locationId = fallbackId;
-          });
-          await saveLocationConfig();
-          await saveWaitlist();
-          try { await window.storage.delete('audit:' + locId, true); } catch(e){}
-          try { await window.storage.delete('audit-ver:' + locId, true); } catch(e){}
-          if (siteMaps[locId]){
-            delete siteMaps[locId];
-            await saveSiteMaps();
-          }
-          if (state.activeLoc === locId) state.activeLoc = fallbackId;
+          await deleteLocationEverywhere(locId);
           render();
         });
       });
@@ -1895,7 +1925,7 @@
       html += '<button class="btn secondary small" data-action="mark-all-audited">Mark all audited</button>';
     }
     if (can('editRackFields')){
-      html += '<button class="btn secondary small" data-action="mark-all-paid">Mark all paid</button>';
+      html += '<button class="btn secondary small" data-action="mark-all-assigned">Mark all assigned</button>';
     }
     if (can('deleteRack')){
       html += '<button class="btn secondary small undo-btn" data-action="delete-all-units">Delete Selected Sites</button>';
@@ -2015,13 +2045,13 @@
       });
     }
 
-    var markAllPaidBtn = document.querySelector('[data-action="mark-all-paid"]');
-    if (markAllPaidBtn){
-      markAllPaidBtn.addEventListener('click', function(){
+    var markAllAssignedBtn = document.querySelector('[data-action="mark-all-assigned"]');
+    if (markAllAssignedBtn){
+      markAllAssignedBtn.addEventListener('click', function(){
         var targets = getVisibleUnits(units);
         if (!targets.length){ showAlert('No spaces match the current filter/search.'); return; }
-        showConfirm('Mark all '+targets.length+' matching space(s) as Paid?', async function(){
-          targets.forEach(function(u){ u.status = 'paid'; });
+        showConfirm('Mark all '+targets.length+' matching space(s) as Assigned?', async function(){
+          targets.forEach(function(u){ u.status = 'assigned'; });
           await saveLocation(loc.id);
           render();
         });
@@ -2161,6 +2191,55 @@
     URL.revokeObjectURL(url);
   }
 
+  // Fully removes a location — its racks/spaces, audit history, site map,
+  // and waitlist reassignment — and fixes up BOTH the Storage Audit section's
+  // active tab (state.activeLoc) and the Waitlist section's active tab
+  // (state.waitlistFilterLoc) if either was pointing at the deleted
+  // location. Used by the delete-location flow in both sections, so
+  // deleting a location from one section can never leave the other section
+  // referencing a location that no longer exists.
+  async function deleteLocationEverywhere(locId){
+    var idx = LOCATIONS.findIndex(function(l){ return l.id === locId; });
+    if (idx > -1) LOCATIONS.splice(idx, 1);
+    delete state.data[locId];
+    var fallbackId = LOCATIONS[0].id;
+    state.waitlist.forEach(function(w){
+      if (w.locationId === locId) w.locationId = fallbackId;
+    });
+    await saveLocationConfig();
+    await saveWaitlist();
+    try { await window.storage.delete('audit:' + locId, true); } catch(e){}
+    try { await window.storage.delete('audit-ver:' + locId, true); } catch(e){}
+    if (siteMaps[locId]){
+      delete siteMaps[locId];
+      await saveSiteMaps();
+    }
+    if (state.activeLoc === locId) state.activeLoc = fallbackId;
+    if (state.waitlistFilterLoc === locId) state.waitlistFilterLoc = 'all';
+  }
+
+  // Removes a location from the WAITLIST SECTION ONLY — it stops showing up
+  // as a pickable location there, and anyone currently on the waitlist for
+  // it is reassigned to another (still-visible) location. Storage Audit is
+  // completely untouched: the location, its racks/spaces, its audit
+  // history, and its site map all stay exactly as they were. This is the
+  // opposite of deleteLocationEverywhere on purpose — the two sections'
+  // location lists must never be merged. Reversible via
+  // showRestoreWaitlistLocationsModal().
+  async function hideLocationFromWaitlist(locId){
+    var target = LOCATIONS.find(function(l){ return l.id === locId; });
+    if (!target) return;
+    target.hiddenFromWaitlist = true;
+    var fallback = LOCATIONS.find(function(l){ return !l.hiddenFromWaitlist; });
+    var fallbackId = fallback ? fallback.id : locId;
+    state.waitlist.forEach(function(w){
+      if (w.locationId === locId) w.locationId = fallbackId;
+    });
+    await saveLocationConfig();
+    await saveWaitlist();
+    if (state.waitlistFilterLoc === locId) state.waitlistFilterLoc = 'all';
+  }
+
   function addNewLocationViaPrompt(){
     return new Promise(function(resolve){
       state.modal = {
@@ -2183,10 +2262,15 @@
     });
   }
 
+  // Only locations that haven't been removed from the Waitlist section
+  // (see hiddenFromWaitlist) show up here — they stay fully intact over
+  // in Storage Audit either way, this just controls what's pickable when
+  // adding or reassigning a waitlist entry.
   function renderLocationOptionsGrouped(selectedId){
     var categories = [];
     var byCategory = {};
     LOCATIONS.forEach(function(l){
+      if (l.hiddenFromWaitlist && l.id !== selectedId) return;
       var cat = l.category || 'Other';
       if (!byCategory[cat]){ byCategory[cat] = []; categories.push(cat); }
       byCategory[cat].push(l);
@@ -2210,6 +2294,7 @@
     var categories = [];
     var byCategory = {};
     LOCATIONS.forEach(function(l){
+      if (l.hiddenFromWaitlist) return;
       var cat = l.category || 'Other';
       if (!byCategory[cat]){ byCategory[cat] = []; categories.push(cat); }
       byCategory[cat].push(l);
@@ -2334,7 +2419,8 @@
       html += '<option value="">⚙ Manage locations…</option>';
       html += '<option value="__add_location__">+ Add new location…</option>';
       html += '<option value="__rename_location__">✎ Rename current tab\'s location…</option>';
-      html += '<option value="__remove_location__">🗑 Delete current tab\'s location…</option>';
+      html += '<option value="__remove_location__">🚫 Remove current tab\'s location from Waitlist only…</option>';
+      html += '<option value="__restore_location__">↩ Restore a location to Waitlist…</option>';
       html += '</select>';
     }
     html += '</div>';
@@ -2474,28 +2560,24 @@
 
         if (val === '__remove_location__'){
           if (state.waitlistFilterLoc === 'all' || state.waitlistFilterLoc.indexOf('cat:') === 0){
-            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Delete current tab\'s location…".');
+            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Remove current tab\'s location from Waitlist only…".');
             return;
           }
-          if (LOCATIONS.length <= 1){
-            showAlert('At least one location has to stay — add another before deleting this one.');
+          var visibleCount = LOCATIONS.filter(function(l){ return !l.hiddenFromWaitlist; }).length;
+          if (visibleCount <= 1){
+            showAlert('At least one location has to stay pickable in the Waitlist — add another before removing this one.');
             return;
           }
           var target = LOCATIONS.find(function(l){ return l.id === state.waitlistFilterLoc; });
-          showConfirm('Delete "'+target.label+'"? This also removes its rack/space audit data. Waitlist members requesting it will be reassigned to another location.', async function(){
-            var idx = LOCATIONS.findIndex(function(l){ return l.id === target.id; });
-            if (idx>-1) LOCATIONS.splice(idx,1);
-            delete state.data[target.id];
-            var fallbackId = LOCATIONS[0].id;
-            state.waitlist.forEach(function(w){
-              if (w.locationId === target.id) w.locationId = fallbackId;
-            });
-            await saveLocationConfig();
-            await saveWaitlist();
-            try { await window.storage.delete('audit:' + target.id, true); } catch(e){}
-            state.waitlistFilterLoc = 'all';
+          showConfirm('Remove "'+target.label+'" from the Waitlist section only? It stays exactly as-is in Storage Audit — its racks/spaces and audit history are NOT touched. Anyone on the waitlist for it will be reassigned to another location. You can restore it to the Waitlist later from "↩ Restore a location to Waitlist…".', async function(){
+            await hideLocationFromWaitlist(target.id);
             render();
           });
+          return;
+        }
+
+        if (val === '__restore_location__'){
+          showRestoreWaitlistLocationsModal();
           return;
         }
       });
