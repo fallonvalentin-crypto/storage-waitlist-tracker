@@ -32,6 +32,8 @@
     --remove-bg: #F6E0DD;
     --paid: #B8960C;
     --paid-bg: #F6F0D9;
+    --shortterm: #0E7490;
+    --shortterm-bg: #DCEEF2;
     --rust: #A8462B;
   }
   *{box-sizing:border-box;}
@@ -172,6 +174,23 @@
   .card.status-repair{border-left:5px solid var(--repair);}
   .card.status-removal{border-left:5px solid var(--remove);}
   .card.status-paid{border-left:5px solid var(--paid);}
+  .card.status-shortterm{border-left:5px solid var(--shortterm);}
+  .card.payment-soon{box-shadow:0 0 0 2px #D9822B inset;}
+  .card.payment-expired{box-shadow:0 0 0 2px #C0392B inset;}
+  .payment-flag{
+    font-size:0.72rem;font-weight:700;padding:4px 8px;border-radius:6px;margin-top:-2px;
+  }
+  .payment-flag-ok{color:var(--dock-wood);}
+  .payment-flag-soon{background:#F7E9D5;color:#9A5B10;}
+  .payment-flag-expired{background:#F6E0DD;color:#C0392B;}
+  .payment-alert-box{
+    margin:10px 2px 0;padding:10px 14px;border-radius:9px;background:#FFF8EC;
+    border:1.5px solid #E7C98A;
+  }
+  .payment-alert-title{font-weight:800;font-size:0.88rem;margin-bottom:6px;color:var(--ink);}
+  .payment-alert-group{font-size:0.82rem;line-height:1.5;margin-top:4px;}
+  .payment-alert-expired{color:#C0392B;}
+  .payment-alert-soon{color:#9A5B10;}
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
   .card-id{font-size:1.05rem;font-weight:800;}
   .badge{
@@ -182,11 +201,13 @@
   .badge.status-repair{background:var(--repair-bg);color:var(--repair);}
   .badge.status-removal{background:var(--remove-bg);color:var(--remove);}
   .badge.status-paid{background:var(--paid-bg);color:var(--paid);}
+  .badge.status-shortterm{background:var(--shortterm-bg);color:var(--shortterm);}
   .status-select.status-assigned{color:var(--assigned);border-color:var(--assigned);}
   .status-select.status-vacant{color:var(--ok);border-color:var(--ok);}
   .status-select.status-repair{color:var(--repair);border-color:var(--repair);}
   .status-select.status-removal{color:var(--remove);border-color:var(--remove);}
   .status-select.status-paid{color:var(--paid);border-color:var(--paid);}
+  .status-select.status-shortterm{color:var(--shortterm);border-color:var(--shortterm);}
   .card-field{font-size:0.82rem;display:flex;justify-content:space-between;gap:6px;}
   .card-field label{color:var(--dock-wood);font-weight:600;}
   .card-field input, .card-field select{
@@ -270,6 +291,12 @@
     border:1.5px solid var(--line);border-radius:5px;padding:2px 0;
   }
   .wl-pos-input:focus{outline:2px solid var(--deep-water);outline-offset:1px;border-color:var(--deep-water);}
+  .wl-placed-check{font-size:1.05rem;}
+  .wl-placed-section{margin-top:22px;padding-top:14px;border-top:2px dashed var(--line);}
+  .wl-placed-heading{
+    font-weight:800;font-size:0.95rem;color:#2E8F4F;display:flex;align-items:center;gap:6px;margin-bottom:10px;
+  }
+  .wl-placed-section .wl-row{background:#F5FAF6;}
   .wl-main{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px;}
   .wl-name-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .wl-name-row input[type="text"]{
@@ -315,6 +342,12 @@
   }
   .modal-card input[type="text"]:focus{outline:2px solid var(--deep-water);outline-offset:1px;border-color:var(--deep-water);}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;}
+  .category-choice-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .payment-settings-row{display:flex;gap:8px;margin-bottom:14px;}
+  .payment-settings-row select{
+    flex:1;padding:9px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.92rem;color:var(--ink);
+  }
+  .category-choice-list .btn{width:100%;text-align:center;}
   .forgot-link{margin:-6px 0 14px;text-align:right;}
   .forgot-link a{color:var(--assigned);font-size:0.78rem;font-weight:600;text-decoration:none;}
   .forgot-link a:hover{text-decoration:underline;}
@@ -436,6 +469,15 @@
     { id: 'laurel-park-campground', label: 'Laurel Park Camp Ground', unitLabel: 'Site #', category: 'Laurel Park Camp Ground' }
   ];
   var LOCATIONS = DEFAULT_LOCATIONS; // replaced with saved config once loaded, if any
+
+  // The two kinds of storage area this app knows about. New locations pick
+  // one of these instead of typing a category name freehand, so the value
+  // always exactly matches what the Short Term status and other
+  // category-specific behavior checks for.
+  var CATEGORY_CHOICES = [
+    { value: 'Non-Power Storage Racks', label: 'Non-Power Boat Storage' },
+    { value: 'Laurel Park Camp Ground', label: 'Laurel Park Camp Ground Storage' }
+  ];
 
   async function loadLocationConfig(){
     try {
@@ -597,7 +639,52 @@
   }
 
   function mk(id){
-    return { id: id, lot: '', status: 'vacant', notes: '', auditedOn: '', auditedBy: '' };
+    return { id: id, lot: '', status: 'vacant', notes: '', auditedOn: '', auditedBy: '', paidOn: '' };
+  }
+
+  // Two different renewal rules, by category:
+  //  - Laurel Park Camp Ground: year-to-date — whatever date a site/space
+  //    was paid on, it's due again on that same month/day the following
+  //    year.
+  //  - Non-Power Storage Racks (and anything else): a fixed calendar date
+  //    every year (May 31st by default, editable from the admin menu) —
+  //    payment covers through the next occurrence of that date on or after
+  //    the paid date.
+  // Returns the due date as a Date, or null if no paid date is on file.
+  // (new Date(y+1, m, d) correctly rolls Feb 29 -> Mar 1 in a non-leap year.)
+  function paymentDueDate(paidOn, loc){
+    if (!paidOn) return null;
+    var parts = paidOn.split('-');
+    if (parts.length !== 3) return null;
+    var y = parseInt(parts[0],10), m = parseInt(parts[1],10)-1, d = parseInt(parts[2],10);
+    if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+    var paidDate = new Date(y, m, d);
+
+    if (loc && loc.category === 'Laurel Park Camp Ground'){
+      return new Date(y+1, m, d);
+    }
+
+    // Fixed annual date: the next occurrence of nonPowerDueMonth/Day on or
+    // after the paid date — i.e. paying covers you through that date, and
+    // if you pay after it's already passed this year, you're covered
+    // through next year's instead.
+    var dueMonth = paymentSettings.nonPowerDueMonth - 1;
+    var dueDay = paymentSettings.nonPowerDueDay;
+    var dueThisYear = new Date(y, dueMonth, dueDay);
+    return (dueThisYear.getTime() >= paidDate.getTime()) ? dueThisYear : new Date(y+1, dueMonth, dueDay);
+  }
+
+  // How many whole days from today until a unit's next payment is due.
+  // Negative means it's already past due. Returns null if there's no
+  // paid date on file yet.
+  var PAYMENT_WARNING_DAYS = 30; // "about to expire" window
+  function paymentDaysUntilDue(paidOn, loc){
+    var due = paymentDueDate(paidOn, loc);
+    if (!due) return null;
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    due.setHours(0,0,0,0);
+    return Math.round((due.getTime() - today.getTime()) / 86400000);
   }
 
   var state = {
@@ -656,6 +743,11 @@
       return;
     }
 
+    if (m.kind === 'paymentSettings'){
+      renderPaymentSettingsModal();
+      return;
+    }
+
     if (m.kind === 'activityLog'){
       renderActivityLogModal();
       return;
@@ -678,6 +770,11 @@
 
     if (m.kind === 'restoreWaitlistLocations'){
       renderRestoreWaitlistLocationsModal();
+      return;
+    }
+
+    if (m.kind === 'categoryChoice'){
+      renderCategoryChoiceModal();
       return;
     }
 
@@ -927,6 +1024,30 @@
     logActivity('Updated branding settings');
   }
 
+  // Non-Power Storage Racks (Holiday Park, Getaway Park, etc.) renew on a
+  // fixed calendar date every year — May 31st by default — unlike Laurel
+  // Park Camp Ground, which renews one year from whenever it was paid.
+  // Editable from the admin menu via "Payment due date".
+  var DEFAULT_PAYMENT_SETTINGS = { nonPowerDueMonth: 5, nonPowerDueDay: 31 }; // May 31
+  var paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
+
+  async function loadPaymentSettings(){
+    try {
+      var res = await window.storage.get('payment-settings', true);
+      var parsed = JSON.parse(res.value);
+      paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS, parsed);
+    } catch(e){
+      paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
+    }
+  }
+
+  async function savePaymentSettings(){
+    try { await window.storage.set('payment-settings', JSON.stringify(paymentSettings), true); } catch(e){}
+    logActivity('Updated payment due date settings');
+  }
+
+  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
   function applyBranding(){
     var titleEl = document.getElementById('appTitleText');
     var tagEl = document.getElementById('appTaglineText');
@@ -960,6 +1081,7 @@
     manageLogins: 'Manage staff & secondary admin logins',
     editBranding: 'Edit branding (name, colors, etc.)',
     editStaffPermissions: 'Edit what Staff are allowed to do',
+    editPaymentSettings: 'Edit the Non-Power Storage payment due date',
     resetData: 'Reset all data for a new company'
   };
 
@@ -987,6 +1109,7 @@
     manageLogins: false,
     editBranding: false,
     editStaffPermissions: false,
+    editPaymentSettings: false,
     resetData: false
   };
   var secondaryAdminPermissions = Object.assign({}, DEFAULT_SECONDARY_ADMIN_PERMISSIONS);
@@ -1108,6 +1231,41 @@
   function showBrandingEditor(){
     state.modal = { kind: 'branding' };
     renderModal();
+  }
+
+  function showPaymentSettingsEditor(){
+    state.modal = { kind: 'paymentSettings' };
+    renderModal();
+  }
+
+  function renderPaymentSettingsModal(){
+    var html = '<div class="modal-overlay"><div class="modal-card">';
+    html += '<div class="um-title">Payment due date</div>';
+    html += '<div class="um-hint">Non-Power Storage Racks (Holiday Park, Getaway Park, etc.) renew on this same calendar date every year, no matter when it was paid. Laurel Park Camp Ground is unaffected — it always renews one year from whenever it was paid.</div>';
+    html += '<div class="payment-settings-row">';
+    html += '<select id="paymentDueMonth">';
+    MONTH_NAMES.forEach(function(name, i){
+      html += '<option value="'+(i+1)+'"'+(paymentSettings.nonPowerDueMonth===(i+1)?' selected':'')+'>'+name+'</option>';
+    });
+    html += '</select>';
+    html += '<select id="paymentDueDay">';
+    for (var d=1; d<=31; d++){
+      html += '<option value="'+d+'"'+(paymentSettings.nonPowerDueDay===d?' selected':'')+'>'+d+'</option>';
+    }
+    html += '</select>';
+    html += '</div>';
+    html += '<div class="modal-actions"><button class="btn secondary small" id="paymentSettingsCancelBtn">Cancel</button><button class="btn small" id="paymentSettingsSaveBtn">Save</button></div>';
+    html += '</div></div>';
+    modalRoot.innerHTML = html;
+
+    document.getElementById('paymentSettingsCancelBtn').addEventListener('click', function(){ closeModal(); });
+    document.getElementById('paymentSettingsSaveBtn').addEventListener('click', async function(){
+      paymentSettings.nonPowerDueMonth = parseInt(document.getElementById('paymentDueMonth').value, 10);
+      paymentSettings.nonPowerDueDay = parseInt(document.getElementById('paymentDueDay').value, 10);
+      await savePaymentSettings();
+      closeModal();
+      render();
+    });
   }
 
   function showActivityLog(){
@@ -1307,6 +1465,9 @@
       if (can('editBranding')){
         html += '<button class="admin-toggle" id="brandingBtn">🎨 Branding</button>';
       }
+      if (can('editPaymentSettings')){
+        html += '<button class="admin-toggle" id="paymentSettingsBtn">📅 Payment due date</button>';
+      }
       if (can('editStaffPermissions')){
         html += '<button class="admin-toggle" id="permissionsBtn">⚙️ Staff permissions</button>';
       }
@@ -1364,6 +1525,11 @@
     var brandingBtn = document.getElementById('brandingBtn');
     if (brandingBtn){
       brandingBtn.addEventListener('click', function(){ showBrandingEditor(); });
+    }
+
+    var paymentSettingsBtn = document.getElementById('paymentSettingsBtn');
+    if (paymentSettingsBtn){
+      paymentSettingsBtn.addEventListener('click', function(){ showPaymentSettingsEditor(); });
     }
 
     var permissionsBtn = document.getElementById('permissionsBtn');
@@ -1628,6 +1794,7 @@
     if (faviconEl) faviconEl.href = DEFAULT_LOGO_DATA_URI; // Storage & Waitlist Tracker's own product icon
     await loadBranding();
     applyBranding();
+    await loadPaymentSettings();
     await loadLocationConfig();
     for (var i=0;i<LOCATIONS.length;i++){
       await loadLocation(LOCATIONS[i].id);
@@ -1658,11 +1825,12 @@
     if (s==='repair') return 'Needs repair';
     if (s==='removal') return 'Removal';
     if (s==='paid') return 'Paid';
+    if (s==='shortterm') return 'Short Term';
     return 'Vacant';
   }
 
   function counts(units){
-    var c = {assigned:0, vacant:0, repair:0, removal:0, paid:0};
+    var c = {assigned:0, vacant:0, repair:0, removal:0, paid:0, shortterm:0};
     units.forEach(function(u){ c[u.status] = (c[u.status]||0)+1; });
     return c;
   }
@@ -1804,11 +1972,10 @@
       addLocBtn.addEventListener('click', function(){
         showPrompt('Name of new park/location:', '', function(name){
           if (!name) return;
-          var existingCats = [];
-          LOCATIONS.forEach(function(l){ if (existingCats.indexOf(l.category)===-1) existingCats.push(l.category); });
-          showPrompt('Category for "'+name+'" (existing: '+existingCats.join(', ')+'):', '', async function(category){
+          showCategoryChoice('Is "'+name+'" a Non-Power Boat Storage location or a Laurel Park Camp Ground Storage location?').then(async function(category){
+            if (!category) return;
             var id = slugify(name);
-            var newLoc = { id: id, label: name, unitLabel: 'Site #', category: (category||'').trim() || 'Other' };
+            var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
             LOCATIONS.push(newLoc);
             state.data[id] = [];
             await saveLocationConfig();
@@ -1910,7 +2077,13 @@
     // Toolbar
     html += '<div class="toolbar">';
     html += '<input type="text" id="searchInput" placeholder="Search by number or lot…" value="'+escapeAttr(state.search)+'">';
-    ['all','assigned','paid','vacant','repair','removal'].forEach(function(f){
+    // "Short Term" only applies to Laurel Park Camp Ground sites/spaces
+    // (dry-dock and laurel-park-campground) — it doesn't show up as a
+    // status choice anywhere else.
+    var isLaurelCampground = loc.category === 'Laurel Park Camp Ground';
+    var statusFilterOptions = ['all','assigned','paid','vacant','repair','removal'];
+    if (isLaurelCampground) statusFilterOptions.push('shortterm');
+    statusFilterOptions.forEach(function(f){
       var label = f==='all' ? 'All' : statusLabel(f);
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="filter" data-filter="'+f+'">'+label+'</button>';
     });
@@ -1950,9 +2123,48 @@
     html += '<span><strong>'+(c.assigned||0)+'</strong> assigned</span>';
     html += '<span><strong>'+(c.paid||0)+'</strong> paid</span>';
     html += '<span><strong>'+(c.vacant||0)+'</strong> vacant</span>';
+    if (isLaurelCampground){
+      html += '<span><strong>'+(c.shortterm||0)+'</strong> short term</span>';
+    }
     html += '<span><strong>'+(c.repair||0)+'</strong> needs repair</span>';
     html += '<span><strong>'+(c.removal||0)+'</strong> removal</span>';
     html += '</div>';
+
+    // Year-to-date payment alert — applies to every location. Surfaces
+    // right here, every time someone opens a location, so staff don't
+    // have to go hunting for who's due or already past due.
+    {
+      var expiredUnits = [], soonUnits = [];
+      units.forEach(function(u){
+        var dd = paymentDaysUntilDue(u.paidOn, loc);
+        if (dd === null) return;
+        if (dd < 0) expiredUnits.push({u:u, dd:dd});
+        else if (dd <= PAYMENT_WARNING_DAYS) soonUnits.push({u:u, dd:dd});
+      });
+      if (expiredUnits.length || soonUnits.length){
+        expiredUnits.sort(function(a,b){ return a.dd - b.dd; });
+        soonUnits.sort(function(a,b){ return a.dd - b.dd; });
+        html += '<div class="payment-alert-box">';
+        html += '<div class="payment-alert-title">💰 Payment due soon — '+loc.label+'</div>';
+        if (expiredUnits.length){
+          html += '<div class="payment-alert-group payment-alert-expired">';
+          html += '<strong>Expired ('+expiredUnits.length+'):</strong> ';
+          html += expiredUnits.map(function(e){
+            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+Math.abs(e.dd)+'d overdue';
+          }).join(', ');
+          html += '</div>';
+        }
+        if (soonUnits.length){
+          html += '<div class="payment-alert-group payment-alert-soon">';
+          html += '<strong>Due within '+PAYMENT_WARNING_DAYS+' days ('+soonUnits.length+'):</strong> ';
+          html += soonUnits.map(function(e){
+            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+e.dd+'d';
+          }).join(', ');
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+    }
 
     // Filter + search
     var visible = getVisibleUnits(units);
@@ -1973,22 +2185,52 @@
 
   function renderCard(u, loc){
     var dis = can('editRackFields') ? '' : ' disabled';
-    var h = '<div class="card status-'+u.status+'" data-id="'+escapeAttr(u.id)+'">';
+    // Payment tracking applies to every location now — Laurel Park Camp
+    // Ground renews year-to-date, everything else renews on the fixed
+    // admin-configurable date (May 31st by default).
+    var dueDays = paymentDaysUntilDue(u.paidOn, loc);
+    var paymentCls = '';
+    if (dueDays !== null){
+      if (dueDays < 0) paymentCls = ' payment-expired';
+      else if (dueDays <= PAYMENT_WARNING_DAYS) paymentCls = ' payment-soon';
+    }
+    var h = '<div class="card status-'+u.status+paymentCls+'" data-id="'+escapeAttr(u.id)+'">';
     h += '<div class="card-top"><div class="card-id">'+escapeHtml(u.id)+'</div>';
     if (can('deleteRack')){
       h += '<button class="remove-x" data-action="remove" title="Remove">✕</button>';
     }
     h += '</div>';
 
-    var optionColors = { vacant: '#2E8F4F', assigned: '#2F6FAD', repair: '#D9822B', removal: '#C0392B', paid: '#B8960C' };
-    var optionBgColors = { vacant: '#E1F0E5', assigned: '#E2EBF4', repair: '#F7E9D5', removal: '#F6E0DD', paid: '#F6F0D9' };
+    var optionColors = { vacant: '#2E8F4F', assigned: '#2F6FAD', repair: '#D9822B', removal: '#C0392B', paid: '#B8960C', shortterm: '#0E7490' };
+    var optionBgColors = { vacant: '#E1F0E5', assigned: '#E2EBF4', repair: '#F7E9D5', removal: '#F6E0DD', paid: '#F6F0D9', shortterm: '#DCEEF2' };
+    // "Short Term" is only offered as a status for Laurel Park Camp Ground
+    // sites/spaces (dry-dock and laurel-park-campground).
+    var statusOptions = ['vacant','assigned','paid','repair','removal'];
+    if (loc.category === 'Laurel Park Camp Ground') statusOptions.push('shortterm');
     h += '<div class="card-field"><label>Status</label><select class="status-select status-'+u.status+'" data-field="status"'+dis+'>';
-    ['vacant','assigned','paid','repair','removal'].forEach(function(s){
+    statusOptions.forEach(function(s){
       h += '<option value="'+s+'"'+(u.status===s?' selected':'')+' style="color:'+optionColors[s]+';background-color:'+optionBgColors[s]+';font-weight:700;">'+statusLabel(s)+'</option>';
     });
     h += '</select></div>';
 
     h += '<div class="card-field"><label>Lot #</label><input type="text" data-field="lot" value="'+escapeAttr(u.lot)+'" placeholder="—"'+dis+'></div>';
+
+    // Year-to-date payment tracking — whatever date a site/space is marked
+    // paid on, it's due again on that same date next year. Applies to
+    // every location. Shows a due-date readout here, and highlights the
+    // whole card when it's within 30 days of (or past) that date.
+    h += '<div class="card-field"><label>Paid on</label><input type="date" data-field="paidOn" value="'+escapeAttr(u.paidOn||'')+'"'+dis+'></div>';
+    if (u.paidOn){
+      var due = paymentDueDate(u.paidOn, loc);
+      var dueStr = due ? (due.getFullYear()+'-'+String(due.getMonth()+1).padStart(2,'0')+'-'+String(due.getDate()).padStart(2,'0')) : '';
+      if (dueDays !== null && dueDays < 0){
+        h += '<div class="payment-flag payment-flag-expired">⚠ Expired '+Math.abs(dueDays)+' day'+(Math.abs(dueDays)===1?'':'s')+' ago (due '+dueStr+')</div>';
+      } else if (dueDays !== null && dueDays <= PAYMENT_WARNING_DAYS){
+        h += '<div class="payment-flag payment-flag-soon">⏳ Due in '+dueDays+' day'+(dueDays===1?'':'s')+' ('+dueStr+')</div>';
+      } else {
+        h += '<div class="payment-flag payment-flag-ok">Next due '+dueStr+'</div>';
+      }
+    }
 
     h += '<div class="card-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(u.notes)+'</textarea></div>';
 
@@ -2139,7 +2381,7 @@
         fieldEl.addEventListener(evt, async function(){
           unit[field] = fieldEl.value;
           await saveLocation(loc.id);
-          if (field === 'status'){ render(); }
+          if (field === 'status' || field === 'paidOn'){ render(); }
         });
       });
 
@@ -2170,9 +2412,9 @@
   }
 
   function exportCsv(loc, units){
-    var rows = [['ID','Lot #','Status','Notes','Audited On','Audited By']];
+    var rows = [['ID','Lot #','Status','Notes','Audited On','Audited By','Paid On']];
     units.forEach(function(u){
-      rows.push([u.id, u.lot, statusLabel(u.status), u.notes, u.auditedOn, u.auditedBy]);
+      rows.push([u.id, u.lot, statusLabel(u.status), u.notes, u.auditedOn, u.auditedBy, u.paidOn || '']);
     });
     var csv = rows.map(function(r){
       return r.map(function(cell){
@@ -2240,6 +2482,40 @@
     if (state.waitlistFilterLoc === locId) state.waitlistFilterLoc = 'all';
   }
 
+  // Asks which of the two storage area kinds a new location belongs to,
+  // instead of typing a category name freehand. Resolves to the exact
+  // category string (matching CATEGORY_CHOICES) or null if cancelled.
+  function showCategoryChoice(message){
+    return new Promise(function(resolve){
+      state.modal = {
+        kind: 'categoryChoice',
+        message: message,
+        onChoose: function(value){ closeModal(); resolve(value); },
+        onCancel: function(){ closeModal(); resolve(null); }
+      };
+      renderModal();
+    });
+  }
+
+  function renderCategoryChoiceModal(){
+    var m = state.modal;
+    var html = '<div class="modal-overlay"><div class="modal-card">';
+    html += '<div class="modal-message">'+escapeHtml(m.message)+'</div>';
+    html += '<div class="category-choice-list">';
+    CATEGORY_CHOICES.forEach(function(c, i){
+      html += '<button class="btn secondary" data-action="category-choice" data-value="'+escapeAttr(c.value)+'">'+escapeHtml(c.label)+'</button>';
+    });
+    html += '</div>';
+    html += '<div class="modal-actions"><button class="btn secondary small" id="categoryChoiceCancelBtn">Cancel</button></div>';
+    html += '</div></div>';
+    modalRoot.innerHTML = html;
+
+    document.querySelectorAll('[data-action="category-choice"]').forEach(function(btn){
+      btn.addEventListener('click', function(){ m.onChoose(btn.getAttribute('data-value')); });
+    });
+    document.getElementById('categoryChoiceCancelBtn').addEventListener('click', function(){ m.onCancel(); });
+  }
+
   function addNewLocationViaPrompt(){
     return new Promise(function(resolve){
       state.modal = {
@@ -2248,8 +2524,10 @@
         value: '',
         onConfirm: async function(name){
           if (!name){ resolve(null); return; }
+          var category = await showCategoryChoice('Is "'+name+'" a Non-Power Boat Storage location or a Laurel Park Camp Ground Storage location?');
+          if (!category){ resolve(null); return; }
           var id = slugify(name);
-          var newLoc = { id: id, label: name, unitLabel: 'Site #' };
+          var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
           LOCATIONS.push(newLoc);
           state.data[id] = [];
           await saveLocationConfig();
@@ -2328,8 +2606,13 @@
   // ever decide which ROWS are shown on screen — they must never affect
   // this ordering, or a person's number would appear to change just
   // because you typed something into the search box.
+  // The numbered queue for a location — everyone requesting it EXCEPT
+  // people already marked "Placed" (they've got their spot; they don't
+  // need a line number anymore and live in their own Placed section
+  // instead), sorted by date added, with "Drop Down on List" pinned to
+  // the bottom regardless.
   function getLocationWaitlistOrder(locationId){
-    var group = state.waitlist.filter(function(w){ return w.locationId === locationId; });
+    var group = state.waitlist.filter(function(w){ return w.locationId === locationId && w.status !== 'placed'; });
     group.sort(function(a,b){
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
@@ -2339,29 +2622,31 @@
     return group;
   }
 
-  function getVisibleWaitlist(){
-    var visible = state.waitlist.filter(function(w){
-      var matchesFilter = state.filter==='all' || w.status===state.filter;
-      var matchesLoc;
-      if (state.waitlistFilterLoc === 'all'){
-        matchesLoc = true;
-      } else if (state.waitlistFilterLoc.indexOf('cat:') === 0){
-        var filterCat = state.waitlistFilterLoc.slice(4);
-        var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-        matchesLoc = wLoc && (wLoc.category || 'Other') === filterCat;
-      } else {
-        matchesLoc = w.locationId === state.waitlistFilterLoc;
-      }
-      var q = state.search.trim().toLowerCase();
-      var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
-      return matchesFilter && matchesLoc && matchesSearch;
-    });
-    // Group by location (in the order locations are defined), and within
-    // each location keep that location's own true queue order — so the
-    // list reads as consecutive per-park queues, e.g. Getaway Park's
-    // 1..N, then Holiday Park's 1..N, rather than one interleaved list.
+  // Shared by the active queue and the Placed section: does this entry
+  // match the selected location tab (or category tab) and the search box?
+  function matchesWaitlistLocAndSearch(w){
+    var matchesLoc;
+    if (state.waitlistFilterLoc === 'all'){
+      matchesLoc = true;
+    } else if (state.waitlistFilterLoc.indexOf('cat:') === 0){
+      var filterCat = state.waitlistFilterLoc.slice(4);
+      var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
+      matchesLoc = wLoc && (wLoc.category || 'Other') === filterCat;
+    } else {
+      matchesLoc = w.locationId === state.waitlistFilterLoc;
+    }
+    var q = state.search.trim().toLowerCase();
+    var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
+    return matchesLoc && matchesSearch;
+  }
+
+  // Groups a list by location (in the order locations are defined) and,
+  // within each location, by that location's own true queue order — so
+  // the list reads as consecutive per-park queues, e.g. Getaway Park's
+  // 1..N, then Holiday Park's 1..N, rather than one interleaved list.
+  function sortByLocationGroup(list){
     var locOrderCache = {};
-    visible.sort(function(a,b){
+    list.sort(function(a,b){
       if (a.locationId !== b.locationId){
         var ai = LOCATIONS.findIndex(function(l){ return l.id === a.locationId; });
         var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
@@ -2371,7 +2656,36 @@
       var order = locOrderCache[a.locationId];
       return order.indexOf(a) - order.indexOf(b);
     });
-    return visible;
+    return list;
+  }
+
+  // The active, numbered queue — never includes "Placed" entries, so
+  // they can't sit in both areas at once.
+  function getVisibleWaitlist(){
+    var visible = state.waitlist.filter(function(w){
+      var matchesFilter = state.filter==='all' || w.status===state.filter;
+      return w.status !== 'placed' && matchesFilter && matchesWaitlistLocAndSearch(w);
+    });
+    return sortByLocationGroup(visible);
+  }
+
+  // The separate "Placed" area — everyone marked Placed, regardless of the
+  // status filter pills (those only apply to the active queue above), still
+  // scoped to the current location tab and search box so it stays in sync
+  // with the rest of the view.
+  function getVisiblePlacedWaitlist(){
+    var placed = state.waitlist.filter(function(w){
+      return w.status === 'placed' && matchesWaitlistLocAndSearch(w);
+    });
+    placed.sort(function(a,b){
+      if (a.locationId !== b.locationId){
+        var ai = LOCATIONS.findIndex(function(l){ return l.id === a.locationId; });
+        var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
+        return ai - bi;
+      }
+      return b.addedAt - a.addedAt; // most recently placed first
+    });
+    return placed;
   }
 
   // Repositions someone within their OWN location's true queue (never the
@@ -2403,7 +2717,7 @@
 
     html += '<div class="toolbar">';
     html += '<input type="text" id="wlSearchInput" placeholder="Search by name, phone, or lot #…" value="'+escapeAttr(state.search)+'">';
-    ['all','waiting','contacted','offered','placed','dropped','denied'].forEach(function(f){
+    ['all','waiting','contacted','offered','dropped','denied'].forEach(function(f){
       var label = f==='all' ? 'All' : WAITLIST_STATUSES[f];
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
     });
@@ -2466,52 +2780,80 @@
     } else {
       html += '<div class="wl-list">';
       visible.forEach(function(w, i){
-        var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-        var dis = can('editWaitlist') ? '' : ' disabled';
         var truePos = truePositions[w.id] || (i+1);
         var locMax = locCounts[w.locationId] || truePos;
-        html += '<div class="wl-row" data-id="'+w.id+'">';
-        html += '<div class="wl-position">';
+        var posHtml = '<div class="wl-position">';
         if (can('editWaitlist')){
-          html += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+locMax+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
+          posHtml += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+locMax+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
         } else {
-          html += '#'+truePos;
+          posHtml += '#'+truePos;
         }
-        html += '</div>';
-        html += '<div class="wl-main">';
-        html += '<div class="wl-name-row">';
-        html += '<input type="text" name="wl-name" data-field="name" value="'+escapeAttr(w.name)+'" placeholder="Name"'+dis+'>';
-        html += '<input type="text" name="wl-phone" data-field="phone" value="'+escapeAttr(w.phone)+'" placeholder="Phone"'+dis+'>';
-        html += '<input type="text" name="wl-lot" data-field="lot" value="'+escapeAttr(w.lot)+'" placeholder="Lot #"'+dis+'>';
-        html += '<select data-field="locationId"'+dis+'>';
-        html += renderLocationOptionsGrouped(w.locationId);
-        if (can('manageLocations')){
-          html += '<option disabled>──────────</option>';
-          html += '<option value="__add_location__">+ Add new location…</option>';
-        }
-        html += '</select>';
-        html += '</div>';
-        html += '<div class="wl-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(w.notes)+'</textarea></div>';
-        html += '</div>';
-        html += '<div class="wl-meta">';
-        html += '<select class="wl-status-select" data-field="status" style="color:'+waitlistColors[w.status]+';border-color:'+waitlistColors[w.status]+'"'+dis+'>';
-        Object.keys(WAITLIST_STATUSES).forEach(function(s){
-          html += '<option value="'+s+'"'+(w.status===s?' selected':'')+' style="color:'+waitlistColors[s]+'">'+WAITLIST_STATUSES[s]+'</option>';
-        });
-        html += '</select>';
-        html += '<label class="wl-date">Date placed on waitlist<input type="date" data-field="dateAdded" value="'+escapeAttr(w.dateAdded)+'"'+dis+'></label>';
-        if (can('deleteWaitlist')){
-          html += '<button class="btn small secondary" data-action="wl-remove">Remove</button>';
-        }
-        html += '</div>';
-        html += '</div>';
+        posHtml += '</div>';
+        html += renderWaitlistRowHtml(w, posHtml);
       });
       html += '</div>';
     }
 
+    // Placed section — kept entirely separate from the numbered queue
+    // above. Anyone marked "Placed" lands here instead, with no line
+    // number (they already have their spot), still scoped to whichever
+    // location tab and search are active.
+    var visiblePlaced = getVisiblePlacedWaitlist();
+    html += '<div class="wl-placed-section">';
+    html += '<div class="wl-placed-heading">✅ Placed<span class="wl-loc-tab-count">'+visiblePlaced.length+'</span></div>';
+    if (visiblePlaced.length === 0){
+      html += '<div class="empty-state">No one placed yet matching the current location/search.</div>';
+    } else {
+      html += '<div class="wl-list">';
+      visiblePlaced.forEach(function(w){
+        var posHtml = '<div class="wl-position"><span class="wl-placed-check" title="Placed">✅</span></div>';
+        html += renderWaitlistRowHtml(w, posHtml);
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
     root.innerHTML = html;
     attachSectionHandlers();
     attachWaitlistHandlers();
+  }
+
+  // Shared row markup for both the active numbered queue and the Placed
+  // section — everything except the position slot (passed in as posHtml)
+  // is identical, including the generic data-field wiring that
+  // attachWaitlistHandlers() hooks up by data-id.
+  function renderWaitlistRowHtml(w, posHtml){
+    var dis = can('editWaitlist') ? '' : ' disabled';
+    var html = '<div class="wl-row" data-id="'+w.id+'">';
+    html += posHtml;
+    html += '<div class="wl-main">';
+    html += '<div class="wl-name-row">';
+    html += '<input type="text" name="wl-name" data-field="name" value="'+escapeAttr(w.name)+'" placeholder="Name"'+dis+'>';
+    html += '<input type="text" name="wl-phone" data-field="phone" value="'+escapeAttr(w.phone)+'" placeholder="Phone"'+dis+'>';
+    html += '<input type="text" name="wl-lot" data-field="lot" value="'+escapeAttr(w.lot)+'" placeholder="Lot #"'+dis+'>';
+    html += '<select data-field="locationId"'+dis+'>';
+    html += renderLocationOptionsGrouped(w.locationId);
+    if (can('manageLocations')){
+      html += '<option disabled>──────────</option>';
+      html += '<option value="__add_location__">+ Add new location…</option>';
+    }
+    html += '</select>';
+    html += '</div>';
+    html += '<div class="wl-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(w.notes)+'</textarea></div>';
+    html += '</div>';
+    html += '<div class="wl-meta">';
+    html += '<select class="wl-status-select" data-field="status" style="color:'+waitlistColors[w.status]+';border-color:'+waitlistColors[w.status]+'"'+dis+'>';
+    Object.keys(WAITLIST_STATUSES).forEach(function(s){
+      html += '<option value="'+s+'"'+(w.status===s?' selected':'')+' style="color:'+waitlistColors[s]+'">'+WAITLIST_STATUSES[s]+'</option>';
+    });
+    html += '</select>';
+    html += '<label class="wl-date">Date placed on waitlist<input type="date" data-field="dateAdded" value="'+escapeAttr(w.dateAdded)+'"'+dis+'></label>';
+    if (can('deleteWaitlist')){
+      html += '<button class="btn small secondary" data-action="wl-remove">Remove</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
   }
 
   function attachWaitlistHandlers(){
@@ -2807,7 +3149,7 @@
   }
 
   function rackStatusKeyFromLabel(label){
-    var map = { 'vacant':'vacant', 'assigned':'assigned', 'paid':'paid', 'needs repair':'repair', 'removal':'removal' };
+    var map = { 'vacant':'vacant', 'assigned':'assigned', 'paid':'paid', 'needs repair':'repair', 'removal':'removal', 'short term':'shortterm' };
     return map[(label||'').trim().toLowerCase()] || null;
   }
 
@@ -2835,6 +3177,7 @@
         var notes = (r[3]||'').trim();
         var auditedOn = (r[4]||'').trim();
         var auditedBy = (r[5]||'').trim();
+        var paidOn = (r[6]||'').trim();
         var existing = units.find(function(u){ return u.id.toLowerCase() === id.toLowerCase(); });
         if (existing){
           existing.lot = lot;
@@ -2842,9 +3185,10 @@
           existing.notes = notes;
           existing.auditedOn = auditedOn;
           existing.auditedBy = auditedBy;
+          if (paidOn) existing.paidOn = paidOn;
           updated++;
         } else {
-          units.push({ id: id, lot: lot, status: statusKey || 'vacant', notes: notes, auditedOn: auditedOn, auditedBy: auditedBy });
+          units.push({ id: id, lot: lot, status: statusKey || 'vacant', notes: notes, auditedOn: auditedOn, auditedBy: auditedBy, paidOn: paidOn });
           added++;
         }
       }
