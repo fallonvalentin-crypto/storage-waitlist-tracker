@@ -314,10 +314,11 @@
   }
   .wl-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:140px;}
   .wl-date{font-size:0.7rem;color:var(--dock-wood);display:flex;flex-direction:column;gap:3px;}
-  .wl-date input[type="date"]{
+  .wl-date input[type="date"], .wl-date input[type="text"]{
     border:1.5px solid var(--line);border-radius:5px;padding:4px 6px;font-size:0.78rem;color:var(--ink);
     font-family:inherit;
   }
+  .wl-placed-fields{display:flex;gap:14px;margin:2px 0 6px;flex-wrap:wrap;}
   .wl-status-select{font-weight:700;border-width:1.5px;border-radius:5px;padding:5px 8px;font-size:0.82rem;}
 
   @media (max-width:480px){
@@ -2710,6 +2711,44 @@
     await saveWaitlist();
   }
 
+  // Takes a Placed waitlist entry and actually creates (or updates) the
+  // rack/space it was given over in Storage Audit — carrying over their
+  // lot # and marking it Assigned — then removes them from the waitlist,
+  // since Storage Audit is now the record of their spot.
+  async function moveWaitlistEntryToStorageAudit(entry){
+    if (!entry.rackGiven || !entry.rackGiven.trim()){
+      showAlert('Enter which rack/site they were given first, then move them.');
+      return;
+    }
+    var loc = LOCATIONS.find(function(l){ return l.id === entry.locationId; });
+    if (!loc){
+      showAlert('Can\'t find that location anymore — pick a different location for this person first.');
+      return;
+    }
+    var rackId = entry.rackGiven.trim();
+    var units = state.data[loc.id] || (state.data[loc.id] = []);
+    var existing = units.find(function(u){ return u.id.toLowerCase() === rackId.toLowerCase(); });
+    var noteAddition = 'From waitlist: '+entry.name+(entry.phone?' ('+entry.phone+')':'');
+    var confirmMsg = existing
+      ? '"'+rackId+'" already exists in '+loc.label+'\'s Storage Audit. Update it with '+entry.name+'\'s lot # and mark it Assigned, then remove '+entry.name+' from the waitlist?'
+      : 'Create "'+rackId+'" in '+loc.label+'\'s Storage Audit for '+entry.name+', marked Assigned, then remove '+entry.name+' from the waitlist?';
+    showConfirm(confirmMsg, async function(){
+      if (existing){
+        existing.lot = entry.lot || existing.lot;
+        existing.status = 'assigned';
+        existing.notes = existing.notes ? (existing.notes+' | '+noteAddition) : noteAddition;
+      } else {
+        units.push({ id: rackId, lot: entry.lot||'', status: 'assigned', notes: noteAddition, auditedOn: '', auditedBy: '', paidOn: '' });
+      }
+      await saveLocation(loc.id);
+      var idx = state.waitlist.findIndex(function(w){ return w.id === entry.id; });
+      if (idx>-1) state.waitlist.splice(idx,1);
+      await saveWaitlist();
+      logActivity('Moved '+entry.name+' from waitlist to Storage Audit as '+rackId+' in '+loc.label);
+      render();
+    });
+  }
+
   function renderWaitlistView(){
     var html = renderSectionToggle();
 
@@ -2807,7 +2846,7 @@
       html += '<div class="wl-list">';
       visiblePlaced.forEach(function(w){
         var posHtml = '<div class="wl-position"><span class="wl-placed-check" title="Placed">✅</span></div>';
-        html += renderWaitlistRowHtml(w, posHtml);
+        html += renderWaitlistRowHtml(w, posHtml, true);
       });
       html += '</div>';
     }
@@ -2821,8 +2860,10 @@
   // Shared row markup for both the active numbered queue and the Placed
   // section — everything except the position slot (passed in as posHtml)
   // is identical, including the generic data-field wiring that
-  // attachWaitlistHandlers() hooks up by data-id.
-  function renderWaitlistRowHtml(w, posHtml){
+  // attachWaitlistHandlers() hooks up by data-id. isPlaced adds the extra
+  // "date placed" / "rack given" fields and the move-to-audit button that
+  // only make sense once someone has actually been placed.
+  function renderWaitlistRowHtml(w, posHtml, isPlaced){
     var dis = can('editWaitlist') ? '' : ' disabled';
     var html = '<div class="wl-row" data-id="'+w.id+'">';
     html += posHtml;
@@ -2839,6 +2880,13 @@
     }
     html += '</select>';
     html += '</div>';
+    if (isPlaced){
+      var loc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
+      html += '<div class="wl-placed-fields">';
+      html += '<label class="wl-date">Date placed<input type="date" data-field="placedOn" value="'+escapeAttr(w.placedOn||'')+'"'+dis+'></label>';
+      html += '<label class="wl-date">'+(loc?escapeHtml(loc.unitLabel):'Rack/Site #')+' given<input type="text" data-field="rackGiven" value="'+escapeAttr(w.rackGiven||'')+'" placeholder="e.g. 42"'+dis+'></label>';
+      html += '</div>';
+    }
     html += '<div class="wl-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(w.notes)+'</textarea></div>';
     html += '</div>';
     html += '<div class="wl-meta">';
@@ -2848,6 +2896,9 @@
     });
     html += '</select>';
     html += '<label class="wl-date">Date placed on waitlist<input type="date" data-field="dateAdded" value="'+escapeAttr(w.dateAdded)+'"'+dis+'></label>';
+    if (isPlaced && can('editWaitlist')){
+      html += '<button class="btn small" data-action="wl-move-to-audit" title="Creates/updates this rack in Storage Audit with their lot #, then removes them from the waitlist">→ Move to Storage Audit</button>';
+    }
     if (can('deleteWaitlist')){
       html += '<button class="btn small secondary" data-action="wl-remove">Remove</button>';
     }
@@ -3046,10 +3097,23 @@
           if (field === 'dateAdded' && fieldEl.value){
             entry.addedAt = new Date(fieldEl.value + 'T00:00:00').getTime();
           }
+          // The first time someone is marked Placed, stamp today's date as
+          // "Date placed" automatically — staff can still edit it by hand
+          // afterward if the actual placement date was different.
+          if (field === 'status' && fieldEl.value === 'placed' && !entry.placedOn){
+            entry.placedOn = todayISO();
+          }
           await saveWaitlist();
           if (field === 'status' || field === 'dateAdded'){ render(); }
         });
       });
+
+      var moveBtn = rowEl.querySelector('[data-action="wl-move-to-audit"]');
+      if (moveBtn){
+        moveBtn.addEventListener('click', function(){
+          moveWaitlistEntryToStorageAudit(entry);
+        });
+      }
 
       var removeBtn = rowEl.querySelector('[data-action="wl-remove"]');
       if (removeBtn){
@@ -3265,7 +3329,7 @@
   }
 
   function exportWaitlistCsv(){
-    var rows = [['Position','Name','Phone','Lot #','Location','Status','Notes','Date Added']];
+    var rows = [['Position','Name','Phone','Lot #','Location','Status','Notes','Date Added','Date Placed','Rack/Site Given']];
     var sorted = state.waitlist.slice().sort(function(a,b){
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
@@ -3274,7 +3338,7 @@
     });
     sorted.forEach(function(w, i){
       var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-      rows.push([i+1, w.name, w.phone, w.lot, locObj ? locObj.label : w.locationId, WAITLIST_STATUSES[w.status], w.notes, w.dateAdded]);
+      rows.push([i+1, w.name, w.phone, w.lot, locObj ? locObj.label : w.locationId, WAITLIST_STATUSES[w.status], w.notes, w.dateAdded, w.placedOn||'', w.rackGiven||'']);
     });
     var csv = rows.map(function(r){
       return r.map(function(cell){
