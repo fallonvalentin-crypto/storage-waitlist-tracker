@@ -345,6 +345,8 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;}
   .category-choice-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
   .payment-settings-row{display:flex;gap:8px;margin-bottom:14px;}
+  .payment-settings-label{display:block;font-size:0.78rem;font-weight:700;color:var(--dock-wood);margin:8px 0 4px;}
+  .payment-settings-year{width:100%;padding:9px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.92rem;color:var(--ink);margin-bottom:6px;}
   .payment-settings-row select{
     flex:1;padding:9px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.92rem;color:var(--ink);
   }
@@ -647,45 +649,71 @@
   //  - Laurel Park Camp Ground: year-to-date — whatever date a site/space
   //    was paid on, it's due again on that same month/day the following
   //    year.
-  //  - Non-Power Storage Racks (and anything else): a fixed calendar date
-  //    every year (May 31st by default, editable from the admin menu) —
-  //    payment covers through the next occurrence of that date on or after
-  //    the paid date.
-  // Returns the due date as a Date, or null if no paid date is on file.
+  //  - Non-Power Storage Racks (and anything else): a payment window for a
+  //    specific year, set by an admin under "Payment due date" — it opens
+  //    January 1st of that year and closes on the due date (May 31st by
+  //    default). Paying on/after January 1st of that year counts as paid.
   // (new Date(y+1, m, d) correctly rolls Feb 29 -> Mar 1 in a non-leap year.)
-  function paymentDueDate(paidOn, loc){
-    if (!paidOn) return null;
-    var parts = paidOn.split('-');
+  var PAYMENT_WARNING_DAYS = 30; // "about to expire" window
+
+  function parseISODate(str){
+    if (!str) return null;
+    var parts = str.split('-');
     if (parts.length !== 3) return null;
     var y = parseInt(parts[0],10), m = parseInt(parts[1],10)-1, d = parseInt(parts[2],10);
     if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
-    var paidDate = new Date(y, m, d);
-
-    if (loc && loc.category === 'Laurel Park Camp Ground'){
-      return new Date(y+1, m, d);
-    }
-
-    // Fixed annual date: the next occurrence of nonPowerDueMonth/Day on or
-    // after the paid date — i.e. paying covers you through that date, and
-    // if you pay after it's already passed this year, you're covered
-    // through next year's instead.
-    var dueMonth = paymentSettings.nonPowerDueMonth - 1;
-    var dueDay = paymentSettings.nonPowerDueDay;
-    var dueThisYear = new Date(y, dueMonth, dueDay);
-    return (dueThisYear.getTime() >= paidDate.getTime()) ? dueThisYear : new Date(y+1, dueMonth, dueDay);
+    return new Date(y, m, d);
   }
 
-  // How many whole days from today until a unit's next payment is due.
-  // Negative means it's already past due. Returns null if there's no
-  // paid date on file yet.
-  var PAYMENT_WARNING_DAYS = 30; // "about to expire" window
-  function paymentDaysUntilDue(paidOn, loc){
-    var due = paymentDueDate(paidOn, loc);
-    if (!due) return null;
+  function formatISODate(d){
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function daysFromToday(d){
     var today = new Date();
     today.setHours(0,0,0,0);
-    due.setHours(0,0,0,0);
-    return Math.round((due.getTime() - today.getTime()) / 86400000);
+    var copy = new Date(d.getTime());
+    copy.setHours(0,0,0,0);
+    return Math.round((copy.getTime() - today.getTime()) / 86400000);
+  }
+
+  // The current non-power payment window: Jan 1 of the configured year
+  // through the configured due date (May 31 by default) of that same year.
+  function nonPowerPaymentWindow(){
+    var y = paymentSettings.nonPowerDueYear;
+    return {
+      year: y,
+      start: new Date(y, paymentSettings.nonPowerStartMonth - 1, paymentSettings.nonPowerStartDay),
+      due: new Date(y, paymentSettings.nonPowerDueMonth - 1, paymentSettings.nonPowerDueDay)
+    };
+  }
+
+  // One answer for "where does this rack/site stand on payment?" used by
+  // both the card and the alert box. Returns null when payment tracking
+  // doesn't apply, otherwise { days, dueStr, note }:
+  //  - days: whole days until due (negative = overdue); null when there is
+  //    nothing to count down to (already paid, or window not open yet).
+  //  - note: short text for the card ("Paid for 2027", "Window opens ...").
+  function paymentStatusFor(u, loc){
+    if (loc && loc.category === 'Laurel Park Camp Ground'){
+      var paid = parseISODate(u.paidOn);
+      if (!paid) return null;
+      var due = new Date(paid.getFullYear()+1, paid.getMonth(), paid.getDate());
+      return { days: daysFromToday(due), dueStr: formatISODate(due), note: null };
+    }
+    // Non-power storage: only racks that are actually in use owe payment.
+    if (u.status !== 'assigned' && u.status !== 'paid') return null;
+    var w = nonPowerPaymentWindow();
+    var dueStr2 = formatISODate(w.due);
+    var paidDate = parseISODate(u.paidOn);
+    if (paidDate && paidDate.getTime() >= w.start.getTime()){
+      return { days: null, dueStr: dueStr2, note: 'paid', year: w.year, startStr: formatISODate(w.start) };
+    }
+    var days = daysFromToday(w.due);
+    if (daysFromToday(w.start) > 0){
+      return { days: null, dueStr: dueStr2, note: 'upcoming', year: w.year, startStr: formatISODate(w.start) };
+    }
+    return { days: days, dueStr: dueStr2, note: null, year: w.year, startStr: formatISODate(w.start) };
   }
 
   var state = {
@@ -1029,7 +1057,7 @@
   // fixed calendar date every year — May 31st by default — unlike Laurel
   // Park Camp Ground, which renews one year from whenever it was paid.
   // Editable from the admin menu via "Payment due date".
-  var DEFAULT_PAYMENT_SETTINGS = { nonPowerDueMonth: 5, nonPowerDueDay: 31 }; // May 31
+  var DEFAULT_PAYMENT_SETTINGS = { nonPowerDueYear: new Date().getFullYear(), nonPowerStartMonth: 1, nonPowerStartDay: 1, nonPowerDueMonth: 5, nonPowerDueDay: 31 }; // window: Jan 1 -> May 31 of that year
   var paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
 
   async function loadPaymentSettings(){
@@ -1240,29 +1268,54 @@
   }
 
   function renderPaymentSettingsModal(){
+    function monthOpts(sel){ return MONTH_NAMES.map(function(n,i){ return '<option value="'+(i+1)+'"'+(sel===(i+1)?' selected':'')+'>'+n+'</option>'; }).join(''); }
+    function dayOpts(sel){ var o=''; for (var d=1; d<=31; d++) o+='<option value="'+d+'"'+(sel===d?' selected':'')+'>'+d+'</option>'; return o; }
     var html = '<div class="modal-overlay"><div class="modal-card">';
-    html += '<div class="um-title">Payment due date</div>';
-    html += '<div class="um-hint">Non-Power Storage Racks (Holiday Park, Getaway Park, etc.) renew on this same calendar date every year, no matter when it was paid. Laurel Park Camp Ground is unaffected — it always renews one year from whenever it was paid.</div>';
-    html += '<div class="payment-settings-row">';
-    html += '<select id="paymentDueMonth">';
-    MONTH_NAMES.forEach(function(name, i){
-      html += '<option value="'+(i+1)+'"'+(paymentSettings.nonPowerDueMonth===(i+1)?' selected':'')+'>'+name+'</option>';
-    });
-    html += '</select>';
-    html += '<select id="paymentDueDay">';
-    for (var d=1; d<=31; d++){
-      html += '<option value="'+d+'"'+(paymentSettings.nonPowerDueDay===d?' selected':'')+'>'+d+'</option>';
-    }
-    html += '</select>';
-    html += '</div>';
+    html += '<div class="um-title">Payment window</div>';
+    html += '<div class="um-hint">Non-Power Storage Racks only. Set the year and the dates the payment window opens and closes. Laurel Park Camp Ground is unaffected — it always renews one year from whenever it was paid.</div>';
+    html += '<label class="payment-settings-label">Year</label>';
+    html += '<input type="number" id="paymentDueYear" class="payment-settings-year" min="2000" max="2100" value="'+paymentSettings.nonPowerDueYear+'">';
+    html += '<label class="payment-settings-label">Window opens</label>';
+    html += '<div class="payment-settings-row"><select id="paymentStartMonth">'+monthOpts(paymentSettings.nonPowerStartMonth)+'</select><select id="paymentStartDay">'+dayOpts(paymentSettings.nonPowerStartDay)+'</select></div>';
+    html += '<label class="payment-settings-label">Due date (last day to pay)</label>';
+    html += '<div class="payment-settings-row"><select id="paymentDueMonth">'+monthOpts(paymentSettings.nonPowerDueMonth)+'</select><select id="paymentDueDay">'+dayOpts(paymentSettings.nonPowerDueDay)+'</select></div>';
+    html += '<div class="um-hint" id="paymentWindowPreview"></div>';
     html += '<div class="modal-actions"><button class="btn secondary small" id="paymentSettingsCancelBtn">Cancel</button><button class="btn small" id="paymentSettingsSaveBtn">Save</button></div>';
     html += '</div></div>';
     modalRoot.innerHTML = html;
 
+    var ids = ['paymentDueYear','paymentStartMonth','paymentStartDay','paymentDueMonth','paymentDueDay'];
+    function val(id){ return parseInt(document.getElementById(id).value, 10); }
+    function problem(){
+      var y = val('paymentDueYear');
+      if (!y || y < 2000 || y > 2100) return 'Enter a year between 2000 and 2100.';
+      var st = new Date(y, val('paymentStartMonth')-1, val('paymentStartDay'));
+      var du = new Date(y, val('paymentDueMonth')-1, val('paymentDueDay'));
+      if (du.getTime() < st.getTime()) return 'The due date must be on or after the date the window opens.';
+      return null;
+    }
+    function updatePreview(){
+      var el = document.getElementById('paymentWindowPreview');
+      var pr = problem();
+      if (pr){ el.textContent = pr; return; }
+      var y = val('paymentDueYear');
+      el.textContent = 'Payment window: '+MONTH_NAMES[val('paymentStartMonth')-1]+' '+val('paymentStartDay')+', '+y+' → '+MONTH_NAMES[val('paymentDueMonth')-1]+' '+val('paymentDueDay')+', '+y;
+    }
+    ids.forEach(function(id){
+      document.getElementById(id).addEventListener('input', updatePreview);
+      document.getElementById(id).addEventListener('change', updatePreview);
+    });
+    updatePreview();
+
     document.getElementById('paymentSettingsCancelBtn').addEventListener('click', function(){ closeModal(); });
     document.getElementById('paymentSettingsSaveBtn').addEventListener('click', async function(){
-      paymentSettings.nonPowerDueMonth = parseInt(document.getElementById('paymentDueMonth').value, 10);
-      paymentSettings.nonPowerDueDay = parseInt(document.getElementById('paymentDueDay').value, 10);
+      var pr = problem();
+      if (pr){ showAlert(pr); return; }
+      paymentSettings.nonPowerDueYear = val('paymentDueYear');
+      paymentSettings.nonPowerStartMonth = val('paymentStartMonth');
+      paymentSettings.nonPowerStartDay = val('paymentStartDay');
+      paymentSettings.nonPowerDueMonth = val('paymentDueMonth');
+      paymentSettings.nonPowerDueDay = val('paymentDueDay');
       await savePaymentSettings();
       closeModal();
       render();
@@ -1467,7 +1520,7 @@
         html += '<button class="admin-toggle" id="brandingBtn">🎨 Branding</button>';
       }
       if (can('editPaymentSettings')){
-        html += '<button class="admin-toggle" id="paymentSettingsBtn">📅 Payment due date</button>';
+        html += '<button class="admin-toggle" id="paymentSettingsBtn">📅 Payment window</button>';
       }
       if (can('editStaffPermissions')){
         html += '<button class="admin-toggle" id="permissionsBtn">⚙️ Staff permissions</button>';
@@ -1841,6 +1894,22 @@
     return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
   }
 
+  // Sort key for a waitlist entry: the signup DATE (midnight) plus the
+  // time-of-day it was typed in, so different dates always sort by date and
+  // same-day signups keep the order they were entered in.
+  function addedAtForDate(iso){
+    var d = new Date(iso + 'T00:00:00');
+    if (isNaN(d.getTime())) return Date.now();
+    var now = new Date();
+    var tod = ((now.getHours()*60 + now.getMinutes())*60 + now.getSeconds())*1000 + now.getMilliseconds();
+    return d.getTime() + tod;
+  }
+  function isSaneISODate(iso){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso||'')) return false;
+    var y = parseInt(iso.slice(0,4), 10);
+    return y >= 1990 && y <= 2100 && !isNaN(new Date(iso + 'T00:00:00').getTime());
+  }
+
   function todayISO(){
     var d = new Date();
     var mm = String(d.getMonth()+1).padStart(2,'0');
@@ -2137,7 +2206,8 @@
     {
       var expiredUnits = [], soonUnits = [];
       units.forEach(function(u){
-        var dd = paymentDaysUntilDue(u.paidOn, loc);
+        var ps = paymentStatusFor(u, loc);
+        var dd = ps ? ps.days : null;
         if (dd === null) return;
         if (dd < 0) expiredUnits.push({u:u, dd:dd});
         else if (dd <= PAYMENT_WARNING_DAYS) soonUnits.push({u:u, dd:dd});
@@ -2146,12 +2216,12 @@
         expiredUnits.sort(function(a,b){ return a.dd - b.dd; });
         soonUnits.sort(function(a,b){ return a.dd - b.dd; });
         html += '<div class="payment-alert-box">';
-        html += '<div class="payment-alert-title">💰 Payment due soon — '+loc.label+'</div>';
+        html += '<div class="payment-alert-title">💰 Payments — '+loc.label+'</div>';
         if (expiredUnits.length){
           html += '<div class="payment-alert-group payment-alert-expired">';
-          html += '<strong>Expired ('+expiredUnits.length+'):</strong> ';
+          html += '<strong>Late payment ('+expiredUnits.length+'):</strong> ';
           html += expiredUnits.map(function(e){
-            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+Math.abs(e.dd)+'d overdue';
+            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+Math.abs(e.dd)+'d late';
           }).join(', ');
           html += '</div>';
         }
@@ -2189,7 +2259,8 @@
     // Payment tracking applies to every location now — Laurel Park Camp
     // Ground renews year-to-date, everything else renews on the fixed
     // admin-configurable date (May 31st by default).
-    var dueDays = paymentDaysUntilDue(u.paidOn, loc);
+    var pay = paymentStatusFor(u, loc);
+    var dueDays = pay ? pay.days : null;
     var paymentCls = '';
     if (dueDays !== null){
       if (dueDays < 0) paymentCls = ' payment-expired';
@@ -2221,15 +2292,18 @@
     // every location. Shows a due-date readout here, and highlights the
     // whole card when it's within 30 days of (or past) that date.
     h += '<div class="card-field"><label>Paid on</label><input type="date" data-field="paidOn" value="'+escapeAttr(u.paidOn||'')+'"'+dis+'></div>';
-    if (u.paidOn){
-      var due = paymentDueDate(u.paidOn, loc);
-      var dueStr = due ? (due.getFullYear()+'-'+String(due.getMonth()+1).padStart(2,'0')+'-'+String(due.getDate()).padStart(2,'0')) : '';
-      if (dueDays !== null && dueDays < 0){
-        h += '<div class="payment-flag payment-flag-expired">⚠ Expired '+Math.abs(dueDays)+' day'+(Math.abs(dueDays)===1?'':'s')+' ago (due '+dueStr+')</div>';
+    if (pay){
+      var dueStr = pay.dueStr;
+      if (pay.note === 'paid'){
+        h += '<div class="payment-flag payment-flag-ok">✓ Paid for '+pay.year+' (window '+pay.startStr+' – '+dueStr+')</div>';
+      } else if (pay.note === 'upcoming'){
+        h += '<div class="payment-flag payment-flag-soon">UNPAID for '+pay.year+' — window opens '+pay.startStr+', due '+dueStr+'</div>';
+      } else if (dueDays !== null && dueDays < 0){
+        h += '<div class="payment-flag payment-flag-expired">⚠ LATE PAYMENT'+(pay.year?' (UNPAID)':'')+' — '+Math.abs(dueDays)+' day'+(Math.abs(dueDays)===1?'':'s')+' past due (was due '+dueStr+')</div>';
       } else if (dueDays !== null && dueDays <= PAYMENT_WARNING_DAYS){
-        h += '<div class="payment-flag payment-flag-soon">⏳ Due in '+dueDays+' day'+(dueDays===1?'':'s')+' ('+dueStr+')</div>';
+        h += '<div class="payment-flag payment-flag-soon">'+(pay.year?'UNPAID — due':'⏳ Due')+' in '+dueDays+' day'+(dueDays===1?'':'s')+' ('+dueStr+')</div>';
       } else {
-        h += '<div class="payment-flag payment-flag-ok">Next due '+dueStr+'</div>';
+        h += '<div class="payment-flag '+(pay.year?'payment-flag-soon':'payment-flag-ok')+'">'+(pay.year?'UNPAID — due ':'Due ')+dueStr+'</div>';
       }
     }
 
@@ -2684,7 +2758,7 @@
         var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
         return ai - bi;
       }
-      return b.addedAt - a.addedAt; // most recently placed first
+      return (b.placedOn||'').localeCompare(a.placedOn||'') || (b.addedAt - a.addedAt); // most recently placed first
     });
     return placed;
   }
@@ -2701,13 +2775,26 @@
     if (idx < 0) return;
     var target = Math.max(1, Math.min(order.length, newPos)) - 1;
     if (target === idx) return;
+    // Reuse the group's existing sort values (smallest to largest) in the
+    // new order, so a manual move never pushes anyone's slot into the
+    // far future and later sign-ups still slot in by their date.
+    var slots = order.filter(function(w){ return w.status !== 'dropped'; }).map(function(w){ return w.addedAt; }).sort(function(x,y){ return x-y; });
     var moved = order.splice(idx, 1)[0];
     order.splice(target, 0, moved);
     // Re-sequence addedAt for just this location's group so the typed
     // order sticks, without touching any other location's queue.
     // ("Drop Down on List" status still pins to the bottom regardless.)
-    var base = Date.now() - order.length * 1000;
-    order.forEach(function(w, i){ w.addedAt = base + i * 1000; });
+    var k = 0;
+    order.forEach(function(w){
+      if (w.status === 'dropped') return;
+      w.addedAt = (k < slots.length ? slots[k] : slots[slots.length-1] + k) + k*0; k++;
+    });
+    // Equal slots (same-day signups) need a strict order to stick.
+    for (var j = 1; j < order.length; j++){
+      if (order[j].status !== 'dropped' && order[j-1].status !== 'dropped' && order[j].addedAt <= order[j-1].addedAt){
+        order[j].addedAt = order[j-1].addedAt + 1;
+      }
+    }
     await saveWaitlist();
   }
 
@@ -2784,12 +2871,15 @@
       html += '<input type="text" id="wlNewPhone" placeholder="Phone">';
       html += '<input type="text" id="wlNewLot" placeholder="Lot #">';
       html += '<select id="wlNewLoc">';
-      html += renderLocationOptionsGrouped(LOCATIONS[0] ? LOCATIONS[0].id : null);
+      var addDefaultLoc = (state.waitlistFilterLoc && state.waitlistFilterLoc !== 'all' && state.waitlistFilterLoc.indexOf('cat:') !== 0 &&
+        LOCATIONS.some(function(l){ return l.id === state.waitlistFilterLoc; })) ? state.waitlistFilterLoc : (LOCATIONS[0] ? LOCATIONS[0].id : null);
+      html += renderLocationOptionsGrouped(addDefaultLoc);
       if (can('manageLocations')){
         html += '<option disabled>──────────</option>';
         html += '<option value="__add_location__">+ Add new location…</option>';
       }
       html += '</select>';
+      html += '<label class="wl-date">Date signed up<input type="date" id="wlNewDate" value="'+todayISO()+'"></label>';
       html += '<button class="btn" data-action="wl-add">+ Add to waitlist</button>';
       html += '</div>';
     } else if (!state.isStaff){
@@ -3052,6 +3142,8 @@
         var name = nameInput.value.trim();
         if (!name){ nameInput.focus(); return; }
         var locationId = (locSelect.value === '__add_location__') ? LOCATIONS[0].id : locSelect.value;
+        var dateEl = document.getElementById('wlNewDate');
+        var signedUp = (dateEl && isSaneISODate(dateEl.value)) ? dateEl.value : todayISO();
         var entry = {
           id: 'wl-' + Date.now() + '-' + Math.floor(Math.random()*1000),
           name: name,
@@ -3060,8 +3152,8 @@
           locationId: locationId,
           notes: '',
           status: 'waiting',
-          addedAt: Date.now(),
-          dateAdded: todayISO()
+          addedAt: addedAtForDate(signedUp),
+          dateAdded: signedUp
         };
         state.waitlist.push(entry);
         await saveWaitlist();
@@ -3091,11 +3183,19 @@
           });
           return;
         }
-        var evt = (fieldEl.tagName === 'SELECT') ? 'change' : 'input';
+        var evt = (fieldEl.tagName === 'SELECT' || fieldEl.type === 'date') ? 'change' : 'input';
         fieldEl.addEventListener(evt, async function(){
-          entry[field] = fieldEl.value;
-          if (field === 'dateAdded' && fieldEl.value){
-            entry.addedAt = new Date(fieldEl.value + 'T00:00:00').getTime();
+          if (field === 'dateAdded'){
+            // Only accept a complete, sensible date — a half-typed year
+            // (e.g. 0002) used to send the person to the top of the list.
+            if (!isSaneISODate(fieldEl.value)){ fieldEl.value = entry.dateAdded; return; }
+            entry.dateAdded = fieldEl.value;
+            entry.addedAt = addedAtForDate(fieldEl.value);
+          } else if (field === 'placedOn'){
+            if (fieldEl.value && !isSaneISODate(fieldEl.value)){ fieldEl.value = entry.placedOn || ''; return; }
+            entry.placedOn = fieldEl.value;
+          } else {
+            entry[field] = fieldEl.value;
           }
           // The first time someone is marked Placed, stamp today's date as
           // "Date placed" automatically — staff can still edit it by hand
@@ -3104,7 +3204,13 @@
             entry.placedOn = todayISO();
           }
           await saveWaitlist();
-          if (field === 'status' || field === 'dateAdded'){ render(); }
+          if (field === 'status' || field === 'dateAdded'){
+            render();
+            if (field === 'status' && fieldEl.value === 'placed'){
+              var ps = document.querySelector('.wl-placed-section');
+              if (ps && ps.scrollIntoView) ps.scrollIntoView({behavior:'smooth', block:'start'});
+            }
+          }
         });
       });
 
