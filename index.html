@@ -2872,7 +2872,12 @@
       html += '<input type="text" id="wlNewLot" placeholder="Lot #">';
       html += '<select id="wlNewLoc">';
       var addDefaultLoc = (state.waitlistFilterLoc && state.waitlistFilterLoc !== 'all' && state.waitlistFilterLoc.indexOf('cat:') !== 0 &&
-        LOCATIONS.some(function(l){ return l.id === state.waitlistFilterLoc; })) ? state.waitlistFilterLoc : (LOCATIONS[0] ? LOCATIONS[0].id : null);
+        LOCATIONS.some(function(l){ return l.id === state.waitlistFilterLoc; })) ? state.waitlistFilterLoc : null;
+      if (!addDefaultLoc && state.waitlistFilterLoc && state.waitlistFilterLoc.indexOf('cat:') === 0){
+        var catLoc = LOCATIONS.find(function(l){ return !l.hiddenFromWaitlist && (l.category || 'Other') === state.waitlistFilterLoc.slice(4); });
+        if (catLoc) addDefaultLoc = catLoc.id;
+      }
+      if (!addDefaultLoc) addDefaultLoc = LOCATIONS[0] ? LOCATIONS[0].id : null;
       html += renderLocationOptionsGrouped(addDefaultLoc);
       if (can('manageLocations')){
         html += '<option disabled>──────────</option>';
@@ -3155,6 +3160,16 @@
           addedAt: addedAtForDate(signedUp),
           dateAdded: signedUp
         };
+        // Signing up today (the default) always lands at the very bottom of
+        // that location's line, whatever the other entries' sort values
+        // are. Only an explicitly earlier date slots in above the end.
+        if (signedUp === todayISO()){
+          var maxAt = 0;
+          state.waitlist.forEach(function(w){
+            if (w.locationId === locationId && w.status !== 'placed' && w.status !== 'dropped' && w.addedAt > maxAt) maxAt = w.addedAt;
+          });
+          if (entry.addedAt <= maxAt) entry.addedAt = maxAt + 1;
+        }
         state.waitlist.push(entry);
         await saveWaitlist();
         render();
