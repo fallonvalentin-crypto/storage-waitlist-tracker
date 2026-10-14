@@ -1904,6 +1904,18 @@
     var tod = ((now.getHours()*60 + now.getMinutes())*60 + now.getSeconds())*1000 + now.getMilliseconds();
     return d.getTime() + tod;
   }
+  // Line order: the date signed up decides (older date = nearer the top,
+  // newer date = nearer the bottom); same-day sign-ups keep entry order.
+  function waitlistDateKey(w){
+    if (isSaneISODate(w.dateAdded)) return w.dateAdded;
+    var d = new Date(w.addedAt);
+    return isNaN(d.getTime()) ? '9999-12-31' : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function compareWaitlistOrder(a,b){
+    var ka = waitlistDateKey(a), kb = waitlistDateKey(b);
+    if (ka !== kb) return ka < kb ? -1 : 1;
+    return a.addedAt - b.addedAt;
+  }
   function isSaneISODate(iso){
     if (!/^\d{4}-\d{2}-\d{2}$/.test(iso||'')) return false;
     var y = parseInt(iso.slice(0,4), 10);
@@ -2692,7 +2704,7 @@
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
       if (bDown && !aDown) return -1;
-      return a.addedAt - b.addedAt;
+      return compareWaitlistOrder(a,b);
     });
     return group;
   }
@@ -2781,6 +2793,16 @@
     var slots = order.filter(function(w){ return w.status !== 'dropped'; }).map(function(w){ return w.addedAt; }).sort(function(x,y){ return x-y; });
     var moved = order.splice(idx, 1)[0];
     order.splice(target, 0, moved);
+    // The line follows the date signed up, so a manual move is only
+    // allowed between people with the same date. Otherwise, change the
+    // person's date instead.
+    for (var q = 1; q < order.length; q++){
+      if (order[q].status === 'dropped' || order[q-1].status === 'dropped') continue;
+      if (waitlistDateKey(order[q-1]) > waitlistDateKey(order[q])){
+        showAlert('Place numbers follow the date signed up (older date = higher in the list). To move '+moved.name+' there, change their "Date placed on waitlist" instead.');
+        return;
+      }
+    }
     // Re-sequence addedAt for just this location's group so the typed
     // order sticks, without touching any other location's queue.
     // ("Drop Down on List" status still pins to the bottom regardless.)
@@ -3455,7 +3477,7 @@
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
       if (bDown && !aDown) return -1;
-      return a.addedAt - b.addedAt;
+      return compareWaitlistOrder(a,b);
     });
     sorted.forEach(function(w, i){
       var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
