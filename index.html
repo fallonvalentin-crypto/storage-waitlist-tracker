@@ -32,8 +32,6 @@
     --remove-bg: #F6E0DD;
     --paid: #B8960C;
     --paid-bg: #F6F0D9;
-    --shortterm: #0E7490;
-    --shortterm-bg: #DCEEF2;
     --rust: #A8462B;
   }
   *{box-sizing:border-box;}
@@ -157,8 +155,6 @@
   .btn:hover{background:#0d2635;}
   .btn.secondary{background:#fff;color:var(--deep-water);border:2px solid var(--deep-water);}
   .btn.secondary:hover{background:var(--dock-wood-light);}
-  .btn.undo-btn{border-color:var(--repair);color:var(--repair);}
-  .btn.undo-btn:hover{background:var(--repair-bg);}
   .btn.small{padding:6px 10px;font-size:0.78rem;}
 
   /* Grid */
@@ -174,23 +170,6 @@
   .card.status-repair{border-left:5px solid var(--repair);}
   .card.status-removal{border-left:5px solid var(--remove);}
   .card.status-paid{border-left:5px solid var(--paid);}
-  .card.status-shortterm{border-left:5px solid var(--shortterm);}
-  .card.payment-soon{box-shadow:0 0 0 2px #D9822B inset;}
-  .card.payment-expired{box-shadow:0 0 0 2px #C0392B inset;}
-  .payment-flag{
-    font-size:0.72rem;font-weight:700;padding:4px 8px;border-radius:6px;margin-top:-2px;
-  }
-  .payment-flag-ok{color:var(--dock-wood);}
-  .payment-flag-soon{background:#F7E9D5;color:#9A5B10;}
-  .payment-flag-expired{background:#F6E0DD;color:#C0392B;}
-  .payment-alert-box{
-    margin:10px 2px 0;padding:10px 14px;border-radius:9px;background:#FFF8EC;
-    border:1.5px solid #E7C98A;
-  }
-  .payment-alert-title{font-weight:800;font-size:0.88rem;margin-bottom:6px;color:var(--ink);}
-  .payment-alert-group{font-size:0.82rem;line-height:1.5;margin-top:4px;}
-  .payment-alert-expired{color:#C0392B;}
-  .payment-alert-soon{color:#9A5B10;}
   .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
   .card-id{font-size:1.05rem;font-weight:800;}
   .badge{
@@ -201,13 +180,11 @@
   .badge.status-repair{background:var(--repair-bg);color:var(--repair);}
   .badge.status-removal{background:var(--remove-bg);color:var(--remove);}
   .badge.status-paid{background:var(--paid-bg);color:var(--paid);}
-  .badge.status-shortterm{background:var(--shortterm-bg);color:var(--shortterm);}
   .status-select.status-assigned{color:var(--assigned);border-color:var(--assigned);}
   .status-select.status-vacant{color:var(--ok);border-color:var(--ok);}
   .status-select.status-repair{color:var(--repair);border-color:var(--repair);}
   .status-select.status-removal{color:var(--remove);border-color:var(--remove);}
   .status-select.status-paid{color:var(--paid);border-color:var(--paid);}
-  .status-select.status-shortterm{color:var(--shortterm);border-color:var(--shortterm);}
   .card-field{font-size:0.82rem;display:flex;justify-content:space-between;gap:6px;}
   .card-field label{color:var(--dock-wood);font-weight:600;}
   .card-field input, .card-field select{
@@ -254,28 +231,6 @@
   .status-bar strong{color:var(--ink);}
 
   /* Waitlist */
-  .wl-loc-tabs{
-    display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 4px;
-    padding-bottom:8px;border-bottom:2px solid var(--line);
-  }
-  .wl-loc-tab-group{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
-  .wl-loc-tab-group-label{
-    font-size:0.68rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--dock-wood);
-    margin:0 2px 0 8px;font-weight:700;
-  }
-  .wl-loc-tab-group:first-child .wl-loc-tab-group-label{margin-left:0;}
-  .wl-loc-tab{
-    border:1.5px solid var(--line);background:#fff;border-radius:999px;
-    padding:6px 13px;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--ink);
-    white-space:nowrap;
-  }
-  .wl-loc-tab:hover{border-color:var(--dock-wood);}
-  .wl-loc-tab.active{background:var(--dock-wood);border-color:var(--dock-wood);color:#fff;}
-  .wl-loc-tab .wl-loc-tab-count{opacity:0.75;font-weight:500;margin-left:3px;}
-  .wl-loc-manage-select{
-    margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:6px;
-    font-size:0.78rem;background:#fff;
-  }
   .wl-list{display:flex;flex-direction:column;gap:8px;}
   .wl-row{
     background:#fff;border:2px solid var(--line);border-radius:9px;padding:10px 14px;
@@ -283,20 +238,8 @@
   }
   .wl-position{
     font-weight:800;font-size:1.1rem;color:var(--dock-wood);min-width:28px;
-    padding-top:4px;display:flex;align-items:center;gap:3px;
+    padding-top:4px;
   }
-  .wl-pos-hash{font-size:0.85rem;color:var(--dock-wood);}
-  .wl-pos-input{
-    width:38px;text-align:center;font-weight:800;font-size:0.95rem;color:var(--dock-wood);
-    border:1.5px solid var(--line);border-radius:5px;padding:2px 0;
-  }
-  .wl-pos-input:focus{outline:2px solid var(--deep-water);outline-offset:1px;border-color:var(--deep-water);}
-  .wl-placed-check{font-size:1.05rem;}
-  .wl-placed-section{margin-top:22px;padding-top:14px;border-top:2px dashed var(--line);}
-  .wl-placed-heading{
-    font-weight:800;font-size:0.95rem;color:#2E8F4F;display:flex;align-items:center;gap:6px;margin-bottom:10px;
-  }
-  .wl-placed-section .wl-row{background:#F5FAF6;}
   .wl-main{flex:1;min-width:200px;display:flex;flex-direction:column;gap:5px;}
   .wl-name-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .wl-name-row input[type="text"]{
@@ -314,11 +257,10 @@
   }
   .wl-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:140px;}
   .wl-date{font-size:0.7rem;color:var(--dock-wood);display:flex;flex-direction:column;gap:3px;}
-  .wl-date input[type="date"], .wl-date input[type="text"]{
+  .wl-date input[type="date"]{
     border:1.5px solid var(--line);border-radius:5px;padding:4px 6px;font-size:0.78rem;color:var(--ink);
     font-family:inherit;
   }
-  .wl-placed-fields{display:flex;gap:14px;margin:2px 0 6px;flex-wrap:wrap;}
   .wl-status-select{font-weight:700;border-width:1.5px;border-radius:5px;padding:5px 8px;font-size:0.82rem;}
 
   @media (max-width:480px){
@@ -343,14 +285,6 @@
   }
   .modal-card input[type="text"]:focus{outline:2px solid var(--deep-water);outline-offset:1px;border-color:var(--deep-water);}
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;}
-  .category-choice-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
-  .payment-settings-row{display:flex;gap:8px;margin-bottom:14px;}
-  .payment-settings-label{display:block;font-size:0.78rem;font-weight:700;color:var(--dock-wood);margin:8px 0 4px;}
-  .payment-settings-year{width:100%;padding:9px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.92rem;color:var(--ink);margin-bottom:6px;}
-  .payment-settings-row select{
-    flex:1;padding:9px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.92rem;color:var(--ink);
-  }
-  .category-choice-list .btn{width:100%;text-align:center;}
   .forgot-link{margin:-6px 0 14px;text-align:right;}
   .forgot-link a{color:var(--assigned);font-size:0.78rem;font-weight:600;text-decoration:none;}
   .forgot-link a:hover{text-decoration:underline;}
@@ -373,14 +307,6 @@
   .um-row-actions button[data-action="um-reset-pw"], .um-row-actions button[data-action="um-set-recovery"]{color:var(--assigned);}
   .um-recovery-set{font-size:0.75rem;}
   .um-hint{font-size:0.74rem;color:var(--dock-wood);margin-bottom:10px;line-height:1.4;}
-  .activity-log-list{max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-  .activity-log-row{
-    border:1.5px solid var(--line);border-radius:7px;padding:8px 10px;font-size:0.82rem;
-  }
-  .activity-log-when{font-size:0.7rem;color:var(--dock-wood);font-weight:700;margin-bottom:2px;}
-  .activity-log-who{font-weight:700;color:var(--ink);}
-  .activity-log-role{font-weight:500;color:var(--dock-wood);}
-  .activity-log-action{color:var(--ink);margin-top:2px;}
   .branding-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
   .branding-field label{font-size:0.78rem;font-weight:700;color:var(--dock-wood);}
   .branding-field input[type="text"]{
@@ -416,71 +342,17 @@
   <div id="modalRoot"></div>
 </div>
 
-<!--
-  ============================================================
-  FIREBASE SETUP — fill in your own project's config below.
-  See the setup guide for how to create a free Firebase project
-  and get these values. Everything after this block is unchanged
-  app logic; it talks to `window.storage`, which this block wires
-  up to Firestore instead of Claude's own storage.
-  ============================================================
--->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-  var firebaseConfig = {
-    apiKey: "AIzaSyCoKUosgdaCpLL3OK9u0poqCo7eUFzi_bU",
-    authDomain: "hideout-storage-tracker.firebaseapp.com",
-    projectId: "hideout-storage-tracker",
-    storageBucket: "hideout-storage-tracker.firebasestorage.app",
-    messagingSenderId: "346169203099",
-    appId: "1:346169203099:web:ad26b4dcd3d5aae130693e"
-  };
-  firebase.initializeApp(firebaseConfig);
-  var db = firebase.firestore();
-  var FIRESTORE_COLLECTION = 'appData';
-
-  // Mimics the same shape Claude's window.storage used, so none of the
-  // app code below (which calls window.storage.get/set/delete) needs to change.
-  window.storage = {
-    get: function(key){
-      return db.collection(FIRESTORE_COLLECTION).doc(key).get().then(function(snap){
-        if (!snap.exists) { throw new Error('not found: ' + key); }
-        return { key: key, value: snap.data().value };
-      });
-    },
-    set: function(key, value){
-      return db.collection(FIRESTORE_COLLECTION).doc(key).set({ value: value }).then(function(){
-        return { key: key, value: value };
-      });
-    },
-    delete: function(key){
-      return db.collection(FIRESTORE_COLLECTION).doc(key).delete().then(function(){
-        return { key: key, deleted: true };
-      });
-    }
-  };
-</script>
-
 <script>
 (function(){
   var DEFAULT_LOCATIONS = [
-    { id: 'holiday-park', label: 'Roamingwood Marina Rack', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
-    { id: 'getaway-park', label: 'Getaway Park', unitLabel: 'Site #', category: 'Non-Power Storage Racks' },
+    { id: 'holiday-park', label: 'Roamingwood Marina Rack', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
+    { id: 'getaway-park', label: 'Getaway Park', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
+    { id: 'deerfield-lake', label: 'Deerfield Lake', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
+    { id: 'brooks-lake', label: 'Brooks Lake', unitLabel: 'Rack #', category: 'Non-Power Storage Racks' },
     { id: 'dry-dock', label: 'Dry Dock', unitLabel: 'Space #', category: 'Laurel Park Camp Ground' },
     { id: 'laurel-park-campground', label: 'Laurel Park Camp Ground', unitLabel: 'Site #', category: 'Laurel Park Camp Ground' }
   ];
   var LOCATIONS = DEFAULT_LOCATIONS; // replaced with saved config once loaded, if any
-
-  // The two kinds of storage area this app knows about. New locations pick
-  // one of these instead of typing a category name freehand, so the value
-  // always exactly matches what the Short Term status and other
-  // category-specific behavior checks for.
-  var CATEGORY_CHOICES = [
-    { value: 'Non-Power Storage Racks', label: 'Non-Power Boat Storage' },
-    { value: 'Laurel Park Camp Ground', label: 'Laurel Park Camp Ground Storage' }
-  ];
 
   async function loadLocationConfig(){
     try {
@@ -501,9 +373,8 @@
   // Fills in categories for locations saved before categories existed, and
   // adds any brand-new default locations (like Laurel Park Camp Ground) that
   // weren't part of an older saved config yet.
-  var CATEGORY_MOVE_VERSION = 4; // bump this to force a one-time re-categorization/label/removal fix below
+  var CATEGORY_MOVE_VERSION = 2; // bump this to force a one-time re-categorization below
   var FORCED_CATEGORY_MOVES = { 'dry-dock': 'Laurel Park Camp Ground' };
-  var FORCED_REMOVALS = ['deerfield-lake', 'brooks-lake'];
 
   async function migrateLocationCategories(){
     var changed = false;
@@ -531,24 +402,6 @@
         var loc = LOCATIONS.find(function(l){ return l.id === id; });
         if (loc) loc.category = FORCED_CATEGORY_MOVES[id];
       });
-      // One-time fix: any location still labeled "Rack #" from before the
-      // wording change gets updated to "Site #" (Dry Dock's "Space #" is untouched).
-      LOCATIONS.forEach(function(l){
-        if (l.unitLabel === 'Rack #') l.unitLabel = 'Site #';
-      });
-      // One-time removal: drop these locations (and their saved rack/space
-      // data) entirely, if they're still present from earlier setup.
-      FORCED_REMOVALS.forEach(function(id){
-        var idx = LOCATIONS.findIndex(function(l){ return l.id === id; });
-        if (idx > -1){
-          LOCATIONS.splice(idx, 1);
-          try { window.storage.delete('audit:' + id, true); } catch(e3){}
-          try { window.storage.delete('audit-ver:' + id, true); } catch(e4){}
-        }
-      });
-      if (LOCATIONS.length === 0){
-        LOCATIONS.push(Object.assign({}, DEFAULT_LOCATIONS[0]));
-      }
       changed = true;
       try { await window.storage.set('category-move-version', String(CATEGORY_MOVE_VERSION), true); } catch(e2){}
     }
@@ -558,57 +411,9 @@
 
   async function saveLocationConfig(){
     try { await window.storage.set('location-config', JSON.stringify(LOCATIONS), true); } catch(e){}
-    logActivity('Updated park/location settings');
   }
 
-  var ACTIVITY_LOG_MAX = 400;
-
-  async function loadActivityLog(){
-    try {
-      var res = await window.storage.get('activity-log', true);
-      var parsed = JSON.parse(res.value);
-      state.activityLog = Array.isArray(parsed) ? parsed : [];
-    } catch(e){
-      state.activityLog = [];
-    }
-  }
-
-  async function saveActivityLogToStorage(){
-    try { await window.storage.set('activity-log', JSON.stringify(state.activityLog), true); } catch(e){}
-  }
-
-  // Records one line in the activity log: who (username/role), what
-  // (a short description), when, and — for login events — their IP.
-  // actorOverride lets login/logout log an entry using the account that was
-  // just logged in/out even after state.currentUser has already changed.
-  async function logActivity(description, actorOverride, ip){
-    var actor = actorOverride || state.currentUser;
-    if (!actor) return;
-    var entry = {
-      time: new Date().toISOString(),
-      username: actor.username,
-      role: actor.role,
-      action: description
-    };
-    if (ip) entry.ip = ip;
-    state.activityLog.unshift(entry);
-    if (state.activityLog.length > ACTIVITY_LOG_MAX) state.activityLog = state.activityLog.slice(0, ACTIVITY_LOG_MAX);
-    await saveActivityLogToStorage();
-  }
-
-  // Asks a public IP-lookup service what IP the request came from. There is
-  // no way for a website to see a visitor's IP on its own — this calls
-  // ipify.org, a well-known free service made for exactly this purpose.
-  async function getVisitorIP(){
-    try {
-      var res = await fetch('https://api.ipify.org?format=json');
-      var data = await res.json();
-      return data.ip || 'unknown';
-    } catch(e){
-      return 'unknown';
-    }
-  }
-
+  var SEED_VERSIONS = { 'holiday-park': 2 }; // bump when a location's known layout changes
   var WAITLIST_STATUSES = { waiting: 'Waiting', contacted: 'Contacted', offered: 'Offered a spot', placed: 'Placed', dropped: 'Drop Down on List', denied: 'Rejected' };
   var waitlistColors = { waiting: '#2F6FAD', contacted: '#7B4FA0', offered: '#B8960C', placed: '#2E8F4F', dropped: '#6B7280', denied: '#C0392B' };
 
@@ -626,7 +431,7 @@
       for (var l=1;l<=6;l++) out2.push(mk('L-'+l));
       return out2;
     }
-    return []; // Any other park (e.g. Getaway Park, or a newly added one) starts empty — add sites as they're mapped
+    return []; // Getaway Park, Deerfield Lake, and Brooks Lake start empty — add spaces as they're mapped
   }
 
   function slugify(name){
@@ -642,78 +447,7 @@
   }
 
   function mk(id){
-    return { id: id, lot: '', status: 'vacant', notes: '', auditedOn: '', auditedBy: '', paidOn: '' };
-  }
-
-  // Two different renewal rules, by category:
-  //  - Laurel Park Camp Ground: year-to-date — whatever date a site/space
-  //    was paid on, it's due again on that same month/day the following
-  //    year.
-  //  - Non-Power Storage Racks (and anything else): a payment window for a
-  //    specific year, set by an admin under "Payment due date" — it opens
-  //    January 1st of that year and closes on the due date (May 31st by
-  //    default). Paying on/after January 1st of that year counts as paid.
-  // (new Date(y+1, m, d) correctly rolls Feb 29 -> Mar 1 in a non-leap year.)
-  var PAYMENT_WARNING_DAYS = 30; // "about to expire" window
-
-  function parseISODate(str){
-    if (!str) return null;
-    var parts = str.split('-');
-    if (parts.length !== 3) return null;
-    var y = parseInt(parts[0],10), m = parseInt(parts[1],10)-1, d = parseInt(parts[2],10);
-    if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
-    return new Date(y, m, d);
-  }
-
-  function formatISODate(d){
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  }
-
-  function daysFromToday(d){
-    var today = new Date();
-    today.setHours(0,0,0,0);
-    var copy = new Date(d.getTime());
-    copy.setHours(0,0,0,0);
-    return Math.round((copy.getTime() - today.getTime()) / 86400000);
-  }
-
-  // The current non-power payment window: Jan 1 of the configured year
-  // through the configured due date (May 31 by default) of that same year.
-  function nonPowerPaymentWindow(){
-    var y = paymentSettings.nonPowerDueYear;
-    return {
-      year: y,
-      start: new Date(y, paymentSettings.nonPowerStartMonth - 1, paymentSettings.nonPowerStartDay),
-      due: new Date(y, paymentSettings.nonPowerDueMonth - 1, paymentSettings.nonPowerDueDay)
-    };
-  }
-
-  // One answer for "where does this rack/site stand on payment?" used by
-  // both the card and the alert box. Returns null when payment tracking
-  // doesn't apply, otherwise { days, dueStr, note }:
-  //  - days: whole days until due (negative = overdue); null when there is
-  //    nothing to count down to (already paid, or window not open yet).
-  //  - note: short text for the card ("Paid for 2027", "Window opens ...").
-  function paymentStatusFor(u, loc){
-    if (loc && loc.category === 'Laurel Park Camp Ground'){
-      var paid = parseISODate(u.paidOn);
-      if (!paid) return null;
-      var due = new Date(paid.getFullYear()+1, paid.getMonth(), paid.getDate());
-      return { days: daysFromToday(due), dueStr: formatISODate(due), note: null };
-    }
-    // Non-power storage: only racks that are actually in use owe payment.
-    if (u.status !== 'assigned' && u.status !== 'paid') return null;
-    var w = nonPowerPaymentWindow();
-    var dueStr2 = formatISODate(w.due);
-    var paidDate = parseISODate(u.paidOn);
-    if (paidDate && paidDate.getTime() >= w.start.getTime()){
-      return { days: null, dueStr: dueStr2, note: 'paid', year: w.year, startStr: formatISODate(w.start) };
-    }
-    var days = daysFromToday(w.due);
-    if (daysFromToday(w.start) > 0){
-      return { days: null, dueStr: dueStr2, note: 'upcoming', year: w.year, startStr: formatISODate(w.start) };
-    }
-    return { days: days, dueStr: dueStr2, note: null, year: w.year, startStr: formatISODate(w.start) };
+    return { id: id, lot: '', status: 'vacant', notes: '', auditedOn: '', auditedBy: '' };
   }
 
   var state = {
@@ -729,17 +463,14 @@
     isOwner: false,
     isAdmin: false,
     isStaff: false,
-    lastRackImportBackup: null, // { locId, label, snapshot } — cleared on undo or reload
-    lastWaitlistImportBackup: null, // { label, snapshot } — cleared on undo or reload
-    activityLog: [],
     loading: true
   };
 
   var root = document.getElementById('root');
   var modalRoot = document.getElementById('modalRoot');
 
-  function showPrompt(message, defaultValue, onConfirm, masked, confirmLabel){
-    state.modal = { kind: 'prompt', message: message, value: defaultValue || '', onConfirm: onConfirm, masked: !!masked, confirmLabel: confirmLabel };
+  function showPrompt(message, defaultValue, onConfirm, masked){
+    state.modal = { kind: 'prompt', message: message, value: defaultValue || '', onConfirm: onConfirm, masked: !!masked };
     renderModal();
   }
 
@@ -772,16 +503,6 @@
       return;
     }
 
-    if (m.kind === 'paymentSettings'){
-      renderPaymentSettingsModal();
-      return;
-    }
-
-    if (m.kind === 'activityLog'){
-      renderActivityLogModal();
-      return;
-    }
-
     if (m.kind === 'permissions'){
       renderPermissionsModal();
       return;
@@ -794,16 +515,6 @@
 
     if (m.kind === 'sitemap'){
       renderSitemapModal(m.locId);
-      return;
-    }
-
-    if (m.kind === 'restoreWaitlistLocations'){
-      renderRestoreWaitlistLocationsModal();
-      return;
-    }
-
-    if (m.kind === 'categoryChoice'){
-      renderCategoryChoiceModal();
       return;
     }
 
@@ -822,7 +533,7 @@
     if (m.kind !== 'alert'){
       html += '<button class="btn secondary small" id="modalCancel">Cancel</button>';
     }
-    html += '<button class="btn small" id="modalConfirm">'+(m.confirmLabel || (m.kind==='alert'?'OK':(m.kind==='confirm'?'Confirm':(m.kind==='login'?'Log in':'Add'))))+'</button>';
+    html += '<button class="btn small" id="modalConfirm">'+(m.kind==='alert'?'OK':(m.kind==='confirm'?'Confirm':(m.kind==='login'?'Log in':'Add')))+'</button>';
     html += '</div></div></div>';
     modalRoot.innerHTML = html;
 
@@ -912,7 +623,6 @@
 
   async function saveSiteMaps(){
     try { await window.storage.set('site-maps', JSON.stringify(siteMaps), true); } catch(e){}
-    logActivity('Updated a site map');
   }
 
   // Downscales/recompresses an uploaded image client-side (via canvas) before
@@ -998,46 +708,6 @@
     }
   }
 
-  function showRestoreWaitlistLocationsModal(){
-    state.modal = { kind: 'restoreWaitlistLocations' };
-    renderModal();
-  }
-
-  // Lists locations that were removed from the Waitlist section's location
-  // list (but NOT deleted — their racks/spaces/audit history in Storage
-  // Audit are completely untouched) and lets an admin bring one back as a
-  // waitlist option again.
-  function renderRestoreWaitlistLocationsModal(){
-    var hidden = LOCATIONS.filter(function(l){ return l.hiddenFromWaitlist; });
-    var html = '<div class="modal-overlay"><div class="modal-card wide">';
-    html += '<div class="um-title">Locations removed from Waitlist</div>';
-    if (hidden.length === 0){
-      html += '<div class="um-hint">None right now — every location is available to pick in the Waitlist section.</div>';
-    } else {
-      html += '<div class="um-hint">These still exist in Storage Audit with all their racks/spaces and audit history untouched. Restoring one just makes it pickable in the Waitlist section again.</div>';
-      hidden.forEach(function(l){
-        html += '<div class="sitemap-upload-row"><span>'+escapeHtml(l.label)+'</span><button class="btn secondary small" data-action="restore-wl-loc" data-loc="'+l.id+'">↩ Restore to Waitlist</button></div>';
-      });
-    }
-    html += '<div class="modal-actions"><button class="btn secondary small" id="restoreWlLocCloseBtn">Close</button></div>';
-    html += '</div></div>';
-    modalRoot.innerHTML = html;
-
-    document.getElementById('restoreWlLocCloseBtn').addEventListener('click', function(){ closeModal(); });
-
-    document.querySelectorAll('[data-action="restore-wl-loc"]').forEach(function(btn){
-      btn.addEventListener('click', async function(){
-        var locId = btn.getAttribute('data-loc');
-        var loc = LOCATIONS.find(function(l){ return l.id === locId; });
-        if (loc){
-          delete loc.hiddenFromWaitlist;
-          await saveLocationConfig();
-        }
-        renderRestoreWaitlistLocationsModal();
-      });
-    });
-  }
-
   async function loadBranding(){
     try {
       var res = await window.storage.get('branding-config', true);
@@ -1050,32 +720,7 @@
 
   async function saveBranding(){
     try { await window.storage.set('branding-config', JSON.stringify(branding), true); } catch(e){}
-    logActivity('Updated branding settings');
   }
-
-  // Non-Power Storage Racks (Holiday Park, Getaway Park, etc.) renew on a
-  // fixed calendar date every year — May 31st by default — unlike Laurel
-  // Park Camp Ground, which renews one year from whenever it was paid.
-  // Editable from the admin menu via "Payment due date".
-  var DEFAULT_PAYMENT_SETTINGS = { nonPowerDueYear: new Date().getFullYear(), nonPowerStartMonth: 1, nonPowerStartDay: 1, nonPowerDueMonth: 5, nonPowerDueDay: 31 }; // window: Jan 1 -> May 31 of that year
-  var paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
-
-  async function loadPaymentSettings(){
-    try {
-      var res = await window.storage.get('payment-settings', true);
-      var parsed = JSON.parse(res.value);
-      paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS, parsed);
-    } catch(e){
-      paymentSettings = Object.assign({}, DEFAULT_PAYMENT_SETTINGS);
-    }
-  }
-
-  async function savePaymentSettings(){
-    try { await window.storage.set('payment-settings', JSON.stringify(paymentSettings), true); } catch(e){}
-    logActivity('Updated payment due date settings');
-  }
-
-  var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   function applyBranding(){
     var titleEl = document.getElementById('appTitleText');
@@ -1110,7 +755,6 @@
     manageLogins: 'Manage staff & secondary admin logins',
     editBranding: 'Edit branding (name, colors, etc.)',
     editStaffPermissions: 'Edit what Staff are allowed to do',
-    editPaymentSettings: 'Edit the Non-Power Storage payment due date',
     resetData: 'Reset all data for a new company'
   };
 
@@ -1138,7 +782,6 @@
     manageLogins: false,
     editBranding: false,
     editStaffPermissions: false,
-    editPaymentSettings: false,
     resetData: false
   };
   var secondaryAdminPermissions = Object.assign({}, DEFAULT_SECONDARY_ADMIN_PERMISSIONS);
@@ -1155,7 +798,6 @@
 
   async function saveStaffPermissions(){
     try { await window.storage.set('staff-permissions', JSON.stringify(staffPermissions), true); } catch(e){}
-    logActivity('Updated Staff permissions');
   }
 
   async function loadSecondaryAdminPermissions(){
@@ -1170,7 +812,6 @@
 
   async function saveSecondaryAdminPermissions(){
     try { await window.storage.set('secondary-admin-permissions', JSON.stringify(secondaryAdminPermissions), true); } catch(e){}
-    logActivity('Updated Secondary Admin permissions');
   }
 
   function roleLabel(role){
@@ -1262,107 +903,6 @@
     renderModal();
   }
 
-  function showPaymentSettingsEditor(){
-    state.modal = { kind: 'paymentSettings' };
-    renderModal();
-  }
-
-  function renderPaymentSettingsModal(){
-    function monthOpts(sel){ return MONTH_NAMES.map(function(n,i){ return '<option value="'+(i+1)+'"'+(sel===(i+1)?' selected':'')+'>'+n+'</option>'; }).join(''); }
-    function dayOpts(sel){ var o=''; for (var d=1; d<=31; d++) o+='<option value="'+d+'"'+(sel===d?' selected':'')+'>'+d+'</option>'; return o; }
-    var html = '<div class="modal-overlay"><div class="modal-card">';
-    html += '<div class="um-title">Payment window</div>';
-    html += '<div class="um-hint">Non-Power Storage Racks only. Set the year and the dates the payment window opens and closes. Laurel Park Camp Ground is unaffected — it always renews one year from whenever it was paid.</div>';
-    html += '<label class="payment-settings-label">Year</label>';
-    html += '<input type="number" id="paymentDueYear" class="payment-settings-year" min="2000" max="2100" value="'+paymentSettings.nonPowerDueYear+'">';
-    html += '<label class="payment-settings-label">Window opens</label>';
-    html += '<div class="payment-settings-row"><select id="paymentStartMonth">'+monthOpts(paymentSettings.nonPowerStartMonth)+'</select><select id="paymentStartDay">'+dayOpts(paymentSettings.nonPowerStartDay)+'</select></div>';
-    html += '<label class="payment-settings-label">Due date (last day to pay)</label>';
-    html += '<div class="payment-settings-row"><select id="paymentDueMonth">'+monthOpts(paymentSettings.nonPowerDueMonth)+'</select><select id="paymentDueDay">'+dayOpts(paymentSettings.nonPowerDueDay)+'</select></div>';
-    html += '<div class="um-hint" id="paymentWindowPreview"></div>';
-    html += '<div class="modal-actions"><button class="btn secondary small" id="paymentSettingsCancelBtn">Cancel</button><button class="btn small" id="paymentSettingsSaveBtn">Save</button></div>';
-    html += '</div></div>';
-    modalRoot.innerHTML = html;
-
-    var ids = ['paymentDueYear','paymentStartMonth','paymentStartDay','paymentDueMonth','paymentDueDay'];
-    function val(id){ return parseInt(document.getElementById(id).value, 10); }
-    function problem(){
-      var y = val('paymentDueYear');
-      if (!y || y < 2000 || y > 2100) return 'Enter a year between 2000 and 2100.';
-      var st = new Date(y, val('paymentStartMonth')-1, val('paymentStartDay'));
-      var du = new Date(y, val('paymentDueMonth')-1, val('paymentDueDay'));
-      if (du.getTime() < st.getTime()) return 'The due date must be on or after the date the window opens.';
-      return null;
-    }
-    function updatePreview(){
-      var el = document.getElementById('paymentWindowPreview');
-      var pr = problem();
-      if (pr){ el.textContent = pr; return; }
-      var y = val('paymentDueYear');
-      el.textContent = 'Payment window: '+MONTH_NAMES[val('paymentStartMonth')-1]+' '+val('paymentStartDay')+', '+y+' → '+MONTH_NAMES[val('paymentDueMonth')-1]+' '+val('paymentDueDay')+', '+y;
-    }
-    ids.forEach(function(id){
-      document.getElementById(id).addEventListener('input', updatePreview);
-      document.getElementById(id).addEventListener('change', updatePreview);
-    });
-    updatePreview();
-
-    document.getElementById('paymentSettingsCancelBtn').addEventListener('click', function(){ closeModal(); });
-    document.getElementById('paymentSettingsSaveBtn').addEventListener('click', async function(){
-      var pr = problem();
-      if (pr){ showAlert(pr); return; }
-      paymentSettings.nonPowerDueYear = val('paymentDueYear');
-      paymentSettings.nonPowerStartMonth = val('paymentStartMonth');
-      paymentSettings.nonPowerStartDay = val('paymentStartDay');
-      paymentSettings.nonPowerDueMonth = val('paymentDueMonth');
-      paymentSettings.nonPowerDueDay = val('paymentDueDay');
-      await savePaymentSettings();
-      closeModal();
-      render();
-    });
-  }
-
-  function showActivityLog(){
-    state.modal = { kind: 'activityLog' };
-    renderModal();
-  }
-
-  function renderActivityLogModal(){
-    var html = '<div class="modal-overlay"><div class="modal-card wide">';
-    html += '<div class="um-title">Activity Log</div>';
-    html += '<div class="um-hint">Main Admin only. Shows who logged in (with their IP address) and who made changes, most recent first. Kept to the last '+ACTIVITY_LOG_MAX+' entries.</div>';
-    if (!state.activityLog.length){
-      html += '<div class="um-hint">Nothing recorded yet.</div>';
-    } else {
-      html += '<div class="activity-log-list">';
-      state.activityLog.forEach(function(entry){
-        var d = new Date(entry.time);
-        var when = isNaN(d.getTime()) ? entry.time : d.toLocaleString();
-        html += '<div class="activity-log-row">';
-        html += '<div class="activity-log-when">'+escapeHtml(when)+'</div>';
-        var knownRole = (entry.role === 'owner' || entry.role === 'admin' || entry.role === 'staff');
-        html += '<div class="activity-log-who">'+escapeHtml(entry.username)+' <span class="activity-log-role">('+escapeHtml(knownRole ? roleLabel(entry.role) : entry.role)+')</span></div>';
-        html += '<div class="activity-log-action">'+escapeHtml(entry.action)+(entry.ip ? ' — IP: '+escapeHtml(entry.ip) : '')+'</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-    html += '<div class="modal-actions">';
-    html += '<button class="btn secondary small" id="clearLogBtn">Clear log</button>';
-    html += '<button class="btn secondary small" id="activityLogCloseBtn">Close</button>';
-    html += '</div></div></div>';
-    modalRoot.innerHTML = html;
-
-    document.getElementById('activityLogCloseBtn').addEventListener('click', function(){ closeModal(); });
-    document.getElementById('clearLogBtn').addEventListener('click', function(){
-      showConfirm('Clear the entire activity log? This can\'t be undone.', async function(){
-        state.activityLog = [];
-        await saveActivityLogToStorage();
-        showActivityLog();
-      });
-    });
-  }
-
   function showResetConfirmation(){
     showPrompt('This permanently clears every park, rack, and waitlist entry in this copy — for setting it up fresh for a new company. Branding and logins are kept. Type RESET to confirm:', '', async function(entered){
       if ((entered||'').trim().toUpperCase() !== 'RESET'){
@@ -1380,7 +920,7 @@
       try { await window.storage.delete('audit-ver:' + LOCATIONS[i].id, true); } catch(e){}
     }
     var blankId = 'park-1';
-    LOCATIONS = [{ id: blankId, label: 'New Park', unitLabel: 'Site #' }];
+    LOCATIONS = [{ id: blankId, label: 'New Park', unitLabel: 'Rack #' }];
     await saveLocationConfig();
     state.data = {};
     state.data[blankId] = [];
@@ -1471,22 +1011,20 @@
 
   async function saveUserAccounts(){
     try { await window.storage.set('user-accounts', JSON.stringify(userAccounts), true); } catch(e){}
-    logActivity('Updated staff/admin logins');
   }
 
   async function saveSession(username){
-    try { localStorage.setItem('swt-session', JSON.stringify({ username: username })); } catch(e){}
+    try { await window.storage.set('session', JSON.stringify({ username: username }), false); } catch(e){}
   }
 
   async function clearSession(){
-    try { localStorage.removeItem('swt-session'); } catch(e){}
+    try { await window.storage.delete('session', false); } catch(e){}
   }
 
   async function tryAutoLogin(){
     try {
-      var raw = localStorage.getItem('swt-session');
-      if (!raw) return;
-      var saved = JSON.parse(raw);
+      var res = await window.storage.get('session', false);
+      var saved = JSON.parse(res.value);
       if (!saved || !saved.username) return;
       var acct = userAccounts.find(function(a){ return a.username === saved.username; });
       if (acct){
@@ -1519,15 +1057,11 @@
       if (can('editBranding')){
         html += '<button class="admin-toggle" id="brandingBtn">🎨 Branding</button>';
       }
-      if (can('editPaymentSettings')){
-        html += '<button class="admin-toggle" id="paymentSettingsBtn">📅 Payment window</button>';
-      }
       if (can('editStaffPermissions')){
         html += '<button class="admin-toggle" id="permissionsBtn">⚙️ Staff permissions</button>';
       }
       if (state.isOwner){
         html += '<button class="admin-toggle" id="secondaryAdminPermsBtn">🛡️ Secondary Admin permissions</button>';
-        html += '<button class="admin-toggle" id="activityLogBtn">📋 Activity Log</button>';
       }
       if (can('resetData')){
         html += '<button class="admin-toggle" id="resetDataBtn">🧹 Reset for new company</button>';
@@ -1539,12 +1073,10 @@
 
     document.getElementById('authBtn').addEventListener('click', function(){
       if (state.currentUser){
-        var outgoingUser = state.currentUser;
         applyCurrentUser(null);
         clearSession();
         renderAdminToggle();
         render();
-        logActivity('Logged out', outgoingUser);
         return;
       }
       showLogin(attemptLogin);
@@ -1581,11 +1113,6 @@
       brandingBtn.addEventListener('click', function(){ showBrandingEditor(); });
     }
 
-    var paymentSettingsBtn = document.getElementById('paymentSettingsBtn');
-    if (paymentSettingsBtn){
-      paymentSettingsBtn.addEventListener('click', function(){ showPaymentSettingsEditor(); });
-    }
-
     var permissionsBtn = document.getElementById('permissionsBtn');
     if (permissionsBtn){
       permissionsBtn.addEventListener('click', function(){ showPermissionsEditor(); });
@@ -1594,11 +1121,6 @@
     var secondaryAdminPermsBtn = document.getElementById('secondaryAdminPermsBtn');
     if (secondaryAdminPermsBtn){
       secondaryAdminPermsBtn.addEventListener('click', function(){ showSecondaryAdminPermissionsEditor(); });
-    }
-
-    var activityLogBtn = document.getElementById('activityLogBtn');
-    if (activityLogBtn){
-      activityLogBtn.addEventListener('click', function(){ showActivityLog(); });
     }
 
     var resetDataBtn = document.getElementById('resetDataBtn');
@@ -1616,14 +1138,8 @@
       if (creds.stayLoggedIn) saveSession(match.username);
       renderAdminToggle();
       render();
-      getVisitorIP().then(function(ip){
-        logActivity('Logged in', { username: match.username, role: match.role }, ip);
-      });
     } else if (creds.username || creds.password){
       showAlert('That username or password isn\'t right.');
-      getVisitorIP().then(function(ip){
-        logActivity('Failed login attempt (username: "'+(creds.username||'')+'")', { username: 'unknown', role: '—' }, ip);
-      });
     }
   }
 
@@ -1813,30 +1329,42 @@
 
   async function saveWaitlist(){
     try { await window.storage.set('waitlist', JSON.stringify(state.waitlist), true); } catch(e){}
-    logActivity('Updated the waitlist');
   }
 
-  // Seeds a park's default rack list ONLY the very first time it's ever
-  // loaded (i.e. when there's genuinely no saved data for it yet). This
-  // deliberately never re-seeds based on a version number, so real,
-  // already-imported data can never be silently wiped by a future default
-  // layout change.
   async function loadLocation(locId){
+    var desiredVersion = SEED_VERSIONS[locId] || 1;
+    var storedVersion = 1;
+    try {
+      var vRes = await window.storage.get('audit-ver:' + locId, true);
+      storedVersion = parseInt(vRes.value, 10) || 1;
+    } catch(e){ storedVersion = 1; } // no version on file yet — treat as baseline, not "needs reseed"
+
+    if (storedVersion < desiredVersion){
+      var seeded = seedFor(locId);
+      state.data[locId] = seeded;
+      try {
+        await window.storage.set('audit:' + locId, JSON.stringify(seeded), true);
+        await window.storage.set('audit-ver:' + locId, String(desiredVersion), true);
+      } catch(e2){}
+      return;
+    }
+
     try {
       var res = await window.storage.get('audit:' + locId, true);
       state.data[locId] = JSON.parse(res.value);
     } catch(e){
-      var seeded = seedFor(locId);
-      state.data[locId] = seeded;
-      try { await window.storage.set('audit:' + locId, JSON.stringify(seeded), true); } catch(e2){}
+      var seeded2 = seedFor(locId);
+      state.data[locId] = seeded2;
+      try {
+        await window.storage.set('audit:' + locId, JSON.stringify(seeded2), true);
+        await window.storage.set('audit-ver:' + locId, String(desiredVersion), true);
+      } catch(e3){}
     }
   }
 
   async function saveLocation(locId){
     try {
       await window.storage.set('audit:' + locId, JSON.stringify(state.data[locId]), true);
-      var loc = LOCATIONS.find(function(l){ return l.id === locId; });
-      logActivity('Updated sites in "'+(loc ? loc.label : locId)+'"');
     } catch(e){
       console.error('Save failed', e);
     }
@@ -1848,27 +1376,16 @@
     if (faviconEl) faviconEl.href = DEFAULT_LOGO_DATA_URI; // Storage & Waitlist Tracker's own product icon
     await loadBranding();
     applyBranding();
-    await loadPaymentSettings();
     await loadLocationConfig();
     for (var i=0;i<LOCATIONS.length;i++){
       await loadLocation(LOCATIONS[i].id);
     }
     await loadWaitlist();
-    var validLocIds = LOCATIONS.map(function(l){ return l.id; });
-    var orphanFixed = false;
-    state.waitlist.forEach(function(w){
-      if (validLocIds.indexOf(w.locationId) === -1){
-        w.locationId = LOCATIONS[0].id;
-        orphanFixed = true;
-      }
-    });
-    if (orphanFixed) await saveWaitlist();
     await loadUserAccounts();
     await tryAutoLogin();
     await loadStaffPermissions();
     await loadSecondaryAdminPermissions();
     await loadSiteMaps();
-    await loadActivityLog();
     state.loading = false;
     renderAdminToggle();
     render();
@@ -1879,12 +1396,11 @@
     if (s==='repair') return 'Needs repair';
     if (s==='removal') return 'Removal';
     if (s==='paid') return 'Paid';
-    if (s==='shortterm') return 'Short Term';
     return 'Vacant';
   }
 
   function counts(units){
-    var c = {assigned:0, vacant:0, repair:0, removal:0, paid:0, shortterm:0};
+    var c = {assigned:0, vacant:0, repair:0, removal:0, paid:0};
     units.forEach(function(u){ c[u.status] = (c[u.status]||0)+1; });
     return c;
   }
@@ -1892,34 +1408,6 @@
   function todayStr(){
     var d = new Date();
     return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear();
-  }
-
-  // Sort key for a waitlist entry: the signup DATE (midnight) plus the
-  // time-of-day it was typed in, so different dates always sort by date and
-  // same-day signups keep the order they were entered in.
-  function addedAtForDate(iso){
-    var d = new Date(iso + 'T00:00:00');
-    if (isNaN(d.getTime())) return Date.now();
-    var now = new Date();
-    var tod = ((now.getHours()*60 + now.getMinutes())*60 + now.getSeconds())*1000 + now.getMilliseconds();
-    return d.getTime() + tod;
-  }
-  // Line order: the date signed up decides (older date = nearer the top,
-  // newer date = nearer the bottom); same-day sign-ups keep entry order.
-  function waitlistDateKey(w){
-    if (isSaneISODate(w.dateAdded)) return w.dateAdded;
-    var d = new Date(w.addedAt);
-    return isNaN(d.getTime()) ? '9999-12-31' : d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  }
-  function compareWaitlistOrder(a,b){
-    var ka = waitlistDateKey(a), kb = waitlistDateKey(b);
-    if (ka !== kb) return ka < kb ? -1 : 1;
-    return a.addedAt - b.addedAt;
-  }
-  function isSaneISODate(iso){
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso||'')) return false;
-    var y = parseInt(iso.slice(0,4), 10);
-    return y >= 1990 && y <= 2100 && !isNaN(new Date(iso + 'T00:00:00').getTime());
   }
 
   function todayISO(){
@@ -2043,7 +1531,22 @@
           return;
         }
         showConfirm('Delete "'+target.label+'" and all of its racks/spaces? This can\'t be undone. Any waitlist members requesting it will be reassigned to another location.', async function(){
-          await deleteLocationEverywhere(locId);
+          var idx = LOCATIONS.findIndex(function(l){ return l.id === locId; });
+          if (idx > -1) LOCATIONS.splice(idx, 1);
+          delete state.data[locId];
+          var fallbackId = LOCATIONS[0].id;
+          state.waitlist.forEach(function(w){
+            if (w.locationId === locId) w.locationId = fallbackId;
+          });
+          await saveLocationConfig();
+          await saveWaitlist();
+          try { await window.storage.delete('audit:' + locId, true); } catch(e){}
+          try { await window.storage.delete('audit-ver:' + locId, true); } catch(e){}
+          if (siteMaps[locId]){
+            delete siteMaps[locId];
+            await saveSiteMaps();
+          }
+          if (state.activeLoc === locId) state.activeLoc = fallbackId;
           render();
         });
       });
@@ -2054,10 +1557,11 @@
       addLocBtn.addEventListener('click', function(){
         showPrompt('Name of new park/location:', '', function(name){
           if (!name) return;
-          showCategoryChoice('Is "'+name+'" a Non-Power Boat Storage location or a Laurel Park Camp Ground Storage location?').then(async function(category){
-            if (!category) return;
+          var existingCats = [];
+          LOCATIONS.forEach(function(l){ if (existingCats.indexOf(l.category)===-1) existingCats.push(l.category); });
+          showPrompt('Category for "'+name+'" (existing: '+existingCats.join(', ')+'):', '', async function(category){
             var id = slugify(name);
-            var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
+            var newLoc = { id: id, label: name, unitLabel: 'Rack #', category: (category||'').trim() || 'Other' };
             LOCATIONS.push(newLoc);
             state.data[id] = [];
             await saveLocationConfig();
@@ -2082,7 +1586,7 @@
         showPrompt('Name of new park/location in "'+category+'":', '', async function(name){
           if (!name) return;
           var id = slugify(name);
-          var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
+          var newLoc = { id: id, label: name, unitLabel: 'Rack #', category: category };
           LOCATIONS.push(newLoc);
           state.data[id] = [];
           await saveLocationConfig();
@@ -2109,39 +1613,6 @@
     });
   }
 
-  // Parses input like "1-40, 1k-132k, 1p-10p, 55" into a Set of exact,
-  // uppercased site IDs. A bare number means a plain/Larger Site; a "k"
-  // suffix means Kayak Site; a "p" suffix means Pedal Boat Site.
-  function parseSiteRanges(text){
-    var ids = new Set();
-    (text||'').split(',').forEach(function(part){
-      part = part.trim();
-      if (!part) return;
-      var m = part.match(/^(\d+)\s*([a-zA-Z]?)\s*-\s*(\d+)\s*([a-zA-Z]?)$/);
-      if (m){
-        var lo = parseInt(m[1],10), hi = parseInt(m[3],10);
-        var suffix = (m[2] || m[4] || '').toUpperCase();
-        if (lo > hi){ var t=lo; lo=hi; hi=t; }
-        for (var n=lo; n<=hi; n++) ids.add(n + suffix);
-        return;
-      }
-      var m2 = part.match(/^(\d+)\s*([a-zA-Z]?)$/);
-      if (m2){
-        ids.add(parseInt(m2[1],10) + (m2[2]||'').toUpperCase());
-      }
-    });
-    return ids;
-  }
-
-  function getVisibleUnits(units){
-    return units.filter(function(u){
-      var matchesFilter = state.filter==='all' || u.status===state.filter;
-      var q = state.search.trim().toLowerCase();
-      var matchesSearch = !q || u.id.toLowerCase().indexOf(q)>-1 || (u.lot||'').toLowerCase().indexOf(q)>-1;
-      return matchesFilter && matchesSearch;
-    });
-  }
-
   function render(){
     if (!state.currentUser){
       renderLoginGate();
@@ -2159,32 +1630,11 @@
     // Toolbar
     html += '<div class="toolbar">';
     html += '<input type="text" id="searchInput" placeholder="Search by number or lot…" value="'+escapeAttr(state.search)+'">';
-    // "Short Term" only applies to Laurel Park Camp Ground sites/spaces
-    // (dry-dock and laurel-park-campground) — it doesn't show up as a
-    // status choice anywhere else.
-    var isLaurelCampground = loc.category === 'Laurel Park Camp Ground';
-    var statusFilterOptions = ['all','assigned','paid','vacant','repair','removal'];
-    if (isLaurelCampground) statusFilterOptions.push('shortterm');
-    statusFilterOptions.forEach(function(f){
+    ['all','assigned','paid','vacant','repair','removal'].forEach(function(f){
       var label = f==='all' ? 'All' : statusLabel(f);
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="filter" data-filter="'+f+'">'+label+'</button>';
     });
     html += '<button class="btn secondary small" data-action="export">Export CSV</button>';
-    if (can('addRack')){
-      html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="importCsvInput" style="display:none;"></label>';
-      if (state.lastRackImportBackup && state.lastRackImportBackup.locId === loc.id){
-        html += '<button class="btn secondary small undo-btn" data-action="undo-rack-import">Undo last import</button>';
-      }
-    }
-    if (can('markAudited')){
-      html += '<button class="btn secondary small" data-action="mark-all-audited">Mark all audited</button>';
-    }
-    if (can('editRackFields')){
-      html += '<button class="btn secondary small" data-action="mark-all-assigned">Mark all assigned</button>';
-    }
-    if (can('deleteRack')){
-      html += '<button class="btn secondary small undo-btn" data-action="delete-all-units">Delete Selected Sites</button>';
-    }
     html += '</div>';
 
     // Add row
@@ -2192,7 +1642,7 @@
       html += '<div class="add-row">';
       html += '<input type="text" name="id" id="newId" placeholder="'+loc.unitLabel+'">';
       html += '<input type="text" name="lot" id="newLot" placeholder="Lot # (optional)">';
-      html += '<button class="btn" data-action="add">+ Add '+ (loc.id==='dry-dock' ? 'space' : 'site') +'</button>';
+      html += '<button class="btn" data-action="add">+ Add '+ (loc.id==='dry-dock' ? 'space' : 'rack') +'</button>';
       html += '</div>';
     } else if (!state.isStaff){
       html += '<div class="readonly-banner">👁 View only — log in above to make changes.</div>';
@@ -2205,52 +1655,17 @@
     html += '<span><strong>'+(c.assigned||0)+'</strong> assigned</span>';
     html += '<span><strong>'+(c.paid||0)+'</strong> paid</span>';
     html += '<span><strong>'+(c.vacant||0)+'</strong> vacant</span>';
-    if (isLaurelCampground){
-      html += '<span><strong>'+(c.shortterm||0)+'</strong> short term</span>';
-    }
     html += '<span><strong>'+(c.repair||0)+'</strong> needs repair</span>';
     html += '<span><strong>'+(c.removal||0)+'</strong> removal</span>';
     html += '</div>';
 
-    // Year-to-date payment alert — applies to every location. Surfaces
-    // right here, every time someone opens a location, so staff don't
-    // have to go hunting for who's due or already past due.
-    {
-      var expiredUnits = [], soonUnits = [];
-      units.forEach(function(u){
-        var ps = paymentStatusFor(u, loc);
-        var dd = ps ? ps.days : null;
-        if (dd === null) return;
-        if (dd < 0) expiredUnits.push({u:u, dd:dd});
-        else if (dd <= PAYMENT_WARNING_DAYS) soonUnits.push({u:u, dd:dd});
-      });
-      if (expiredUnits.length || soonUnits.length){
-        expiredUnits.sort(function(a,b){ return a.dd - b.dd; });
-        soonUnits.sort(function(a,b){ return a.dd - b.dd; });
-        html += '<div class="payment-alert-box">';
-        html += '<div class="payment-alert-title">💰 Payments — '+loc.label+'</div>';
-        if (expiredUnits.length){
-          html += '<div class="payment-alert-group payment-alert-expired">';
-          html += '<strong>Late payment ('+expiredUnits.length+'):</strong> ';
-          html += expiredUnits.map(function(e){
-            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+Math.abs(e.dd)+'d late';
-          }).join(', ');
-          html += '</div>';
-        }
-        if (soonUnits.length){
-          html += '<div class="payment-alert-group payment-alert-soon">';
-          html += '<strong>Due within '+PAYMENT_WARNING_DAYS+' days ('+soonUnits.length+'):</strong> ';
-          html += soonUnits.map(function(e){
-            return escapeHtml(e.u.id)+(e.u.lot?' (Lot '+escapeHtml(e.u.lot)+')':'')+' — '+e.dd+'d';
-          }).join(', ');
-          html += '</div>';
-        }
-        html += '</div>';
-      }
-    }
-
     // Filter + search
-    var visible = getVisibleUnits(units);
+    var visible = units.filter(function(u){
+      var matchesFilter = state.filter==='all' || u.status===state.filter;
+      var q = state.search.trim().toLowerCase();
+      var matchesSearch = !q || u.id.toLowerCase().indexOf(q)>-1 || (u.lot||'').toLowerCase().indexOf(q)>-1;
+      return matchesFilter && matchesSearch;
+    });
 
     if (visible.length === 0){
       html += '<div class="empty-state">No spaces match. Add one above, or clear your search/filter.</div>';
@@ -2268,56 +1683,21 @@
 
   function renderCard(u, loc){
     var dis = can('editRackFields') ? '' : ' disabled';
-    // Payment tracking applies to every location now — Laurel Park Camp
-    // Ground renews year-to-date, everything else renews on the fixed
-    // admin-configurable date (May 31st by default).
-    var pay = paymentStatusFor(u, loc);
-    var dueDays = pay ? pay.days : null;
-    var paymentCls = '';
-    if (dueDays !== null){
-      if (dueDays < 0) paymentCls = ' payment-expired';
-      else if (dueDays <= PAYMENT_WARNING_DAYS) paymentCls = ' payment-soon';
-    }
-    var h = '<div class="card status-'+u.status+paymentCls+'" data-id="'+escapeAttr(u.id)+'">';
+    var h = '<div class="card status-'+u.status+'" data-id="'+escapeAttr(u.id)+'">';
     h += '<div class="card-top"><div class="card-id">'+escapeHtml(u.id)+'</div>';
     if (can('deleteRack')){
       h += '<button class="remove-x" data-action="remove" title="Remove">✕</button>';
     }
     h += '</div>';
 
-    var optionColors = { vacant: '#2E8F4F', assigned: '#2F6FAD', repair: '#D9822B', removal: '#C0392B', paid: '#B8960C', shortterm: '#0E7490' };
-    var optionBgColors = { vacant: '#E1F0E5', assigned: '#E2EBF4', repair: '#F7E9D5', removal: '#F6E0DD', paid: '#F6F0D9', shortterm: '#DCEEF2' };
-    // "Short Term" is only offered as a status for Laurel Park Camp Ground
-    // sites/spaces (dry-dock and laurel-park-campground).
-    var statusOptions = ['vacant','assigned','paid','repair','removal'];
-    if (loc.category === 'Laurel Park Camp Ground') statusOptions.push('shortterm');
+    var optionColors = { vacant: '#2E8F4F', assigned: '#2F6FAD', repair: '#D9822B', removal: '#C0392B', paid: '#B8960C' };
     h += '<div class="card-field"><label>Status</label><select class="status-select status-'+u.status+'" data-field="status"'+dis+'>';
-    statusOptions.forEach(function(s){
-      h += '<option value="'+s+'"'+(u.status===s?' selected':'')+' style="color:'+optionColors[s]+';background-color:'+optionBgColors[s]+';font-weight:700;">'+statusLabel(s)+'</option>';
+    ['vacant','assigned','paid','repair','removal'].forEach(function(s){
+      h += '<option value="'+s+'"'+(u.status===s?' selected':'')+' style="color:'+optionColors[s]+'">'+statusLabel(s)+'</option>';
     });
     h += '</select></div>';
 
     h += '<div class="card-field"><label>Lot #</label><input type="text" data-field="lot" value="'+escapeAttr(u.lot)+'" placeholder="—"'+dis+'></div>';
-
-    // Year-to-date payment tracking — whatever date a site/space is marked
-    // paid on, it's due again on that same date next year. Applies to
-    // every location. Shows a due-date readout here, and highlights the
-    // whole card when it's within 30 days of (or past) that date.
-    h += '<div class="card-field"><label>Paid on</label><input type="date" data-field="paidOn" value="'+escapeAttr(u.paidOn||'')+'"'+dis+'></div>';
-    if (pay){
-      var dueStr = pay.dueStr;
-      if (pay.note === 'paid'){
-        h += '<div class="payment-flag payment-flag-ok">✓ Paid for '+pay.year+' (window '+pay.startStr+' – '+dueStr+')</div>';
-      } else if (pay.note === 'upcoming'){
-        h += '<div class="payment-flag payment-flag-soon">UNPAID for '+pay.year+' — window opens '+pay.startStr+', due '+dueStr+'</div>';
-      } else if (dueDays !== null && dueDays < 0){
-        h += '<div class="payment-flag payment-flag-expired">⚠ LATE PAYMENT'+(pay.year?' (UNPAID)':'')+' — '+Math.abs(dueDays)+' day'+(Math.abs(dueDays)===1?'':'s')+' past due (was due '+dueStr+')</div>';
-      } else if (dueDays !== null && dueDays <= PAYMENT_WARNING_DAYS){
-        h += '<div class="payment-flag payment-flag-soon">'+(pay.year?'UNPAID — due':'⏳ Due')+' in '+dueDays+' day'+(dueDays===1?'':'s')+' ('+dueStr+')</div>';
-      } else {
-        h += '<div class="payment-flag '+(pay.year?'payment-flag-soon':'payment-flag-ok')+'">'+(pay.year?'UNPAID — due ':'Due ')+dueStr+'</div>';
-      }
-    }
 
     h += '<div class="card-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(u.notes)+'</textarea></div>';
 
@@ -2357,88 +1737,6 @@
       btn.addEventListener('click', function(){ exportCsv(loc, units); });
     });
 
-    var markAllAuditedBtn = document.querySelector('[data-action="mark-all-audited"]');
-    if (markAllAuditedBtn){
-      markAllAuditedBtn.addEventListener('click', function(){
-        var targets = getVisibleUnits(units);
-        if (!targets.length){ showAlert('No spaces match the current filter/search.'); return; }
-        showPrompt('Mark all '+targets.length+' matching space(s) as audited. Your initials:', '', async function(initials){
-          var today = todayStr();
-          targets.forEach(function(u){
-            u.auditedOn = today;
-            u.auditedBy = initials;
-          });
-          await saveLocation(loc.id);
-          render();
-        });
-      });
-    }
-
-    var markAllAssignedBtn = document.querySelector('[data-action="mark-all-assigned"]');
-    if (markAllAssignedBtn){
-      markAllAssignedBtn.addEventListener('click', function(){
-        var targets = getVisibleUnits(units);
-        if (!targets.length){ showAlert('No spaces match the current filter/search.'); return; }
-        showConfirm('Mark all '+targets.length+' matching space(s) as Assigned?', async function(){
-          targets.forEach(function(u){ u.status = 'assigned'; });
-          await saveLocation(loc.id);
-          render();
-        });
-      });
-    }
-
-    var deleteAllBtn = document.querySelector('[data-action="delete-all-units"]');
-    if (deleteAllBtn){
-      deleteAllBtn.addEventListener('click', function(){
-        showPrompt('Enter the range of sites to delete. Use a plain number for a Larger Site, "k" for a Kayak Site, or "p" for a Pedal Boat Site — e.g. "1-40" or "1k-132k, 1p-10p". Leave blank to use the current filter/search instead.', '', function(rangeText){
-          var targets;
-          if (rangeText && rangeText.trim()){
-            var wanted = parseSiteRanges(rangeText);
-            if (wanted.size === 0){
-              showAlert('Couldn\'t read that as a range. Try something like "1-40" or "1k-132k, 1p-10p".');
-              return;
-            }
-            targets = units.filter(function(u){
-              return wanted.has(String(u.id).toUpperCase());
-            });
-          } else {
-            targets = getVisibleUnits(units);
-          }
-          if (!targets.length){ showAlert('Nothing matched.'); return; }
-          showConfirm('Delete '+targets.length+' matching site(s) in "'+loc.label+'"? This can\'t be undone.', async function(){
-            var targetIds = targets.map(function(u){ return u.id; });
-            state.data[loc.id] = units.filter(function(u){ return targetIds.indexOf(u.id) === -1; });
-            await saveLocation(loc.id);
-            render();
-          });
-        }, false, 'Delete');
-      });
-    }
-
-    var importCsvInput = document.getElementById('importCsvInput');
-    if (importCsvInput){
-      importCsvInput.addEventListener('change', function(){
-        var file = importCsvInput.files && importCsvInput.files[0];
-        if (!file) return;
-        importRackCsv(file, loc);
-        importCsvInput.value = '';
-      });
-    }
-
-    var undoRackImportBtn = document.querySelector('[data-action="undo-rack-import"]');
-    if (undoRackImportBtn){
-      undoRackImportBtn.addEventListener('click', function(){
-        var backup = state.lastRackImportBackup;
-        if (!backup) return;
-        showConfirm('Undo the last import into "'+backup.label+'"? This restores it to how it was right before that import.', async function(){
-          state.data[backup.locId] = backup.snapshot;
-          state.lastRackImportBackup = null;
-          await saveLocation(backup.locId);
-          render();
-        });
-      });
-    }
-
     document.querySelectorAll('[data-action="add"]').forEach(function(btn){
       btn.addEventListener('click', async function(){
         var idInput = document.getElementById('newId');
@@ -2468,7 +1766,7 @@
         fieldEl.addEventListener(evt, async function(){
           unit[field] = fieldEl.value;
           await saveLocation(loc.id);
-          if (field === 'status' || field === 'paidOn'){ render(); }
+          if (field === 'status'){ render(); }
         });
       });
 
@@ -2499,9 +1797,9 @@
   }
 
   function exportCsv(loc, units){
-    var rows = [['ID','Lot #','Status','Notes','Audited On','Audited By','Paid On']];
+    var rows = [['ID','Lot #','Status','Notes','Audited On','Audited By']];
     units.forEach(function(u){
-      rows.push([u.id, u.lot, statusLabel(u.status), u.notes, u.auditedOn, u.auditedBy, u.paidOn || '']);
+      rows.push([u.id, u.lot, statusLabel(u.status), u.notes, u.auditedOn, u.auditedBy]);
     });
     var csv = rows.map(function(r){
       return r.map(function(cell){
@@ -2520,89 +1818,6 @@
     URL.revokeObjectURL(url);
   }
 
-  // Fully removes a location — its racks/spaces, audit history, site map,
-  // and waitlist reassignment — and fixes up BOTH the Storage Audit section's
-  // active tab (state.activeLoc) and the Waitlist section's active tab
-  // (state.waitlistFilterLoc) if either was pointing at the deleted
-  // location. Used by the delete-location flow in both sections, so
-  // deleting a location from one section can never leave the other section
-  // referencing a location that no longer exists.
-  async function deleteLocationEverywhere(locId){
-    var idx = LOCATIONS.findIndex(function(l){ return l.id === locId; });
-    if (idx > -1) LOCATIONS.splice(idx, 1);
-    delete state.data[locId];
-    var fallbackId = LOCATIONS[0].id;
-    state.waitlist.forEach(function(w){
-      if (w.locationId === locId) w.locationId = fallbackId;
-    });
-    await saveLocationConfig();
-    await saveWaitlist();
-    try { await window.storage.delete('audit:' + locId, true); } catch(e){}
-    try { await window.storage.delete('audit-ver:' + locId, true); } catch(e){}
-    if (siteMaps[locId]){
-      delete siteMaps[locId];
-      await saveSiteMaps();
-    }
-    if (state.activeLoc === locId) state.activeLoc = fallbackId;
-    if (state.waitlistFilterLoc === locId) state.waitlistFilterLoc = 'all';
-  }
-
-  // Removes a location from the WAITLIST SECTION ONLY — it stops showing up
-  // as a pickable location there, and anyone currently on the waitlist for
-  // it is reassigned to another (still-visible) location. Storage Audit is
-  // completely untouched: the location, its racks/spaces, its audit
-  // history, and its site map all stay exactly as they were. This is the
-  // opposite of deleteLocationEverywhere on purpose — the two sections'
-  // location lists must never be merged. Reversible via
-  // showRestoreWaitlistLocationsModal().
-  async function hideLocationFromWaitlist(locId){
-    var target = LOCATIONS.find(function(l){ return l.id === locId; });
-    if (!target) return;
-    target.hiddenFromWaitlist = true;
-    var fallback = LOCATIONS.find(function(l){ return !l.hiddenFromWaitlist; });
-    var fallbackId = fallback ? fallback.id : locId;
-    state.waitlist.forEach(function(w){
-      if (w.locationId === locId) w.locationId = fallbackId;
-    });
-    await saveLocationConfig();
-    await saveWaitlist();
-    if (state.waitlistFilterLoc === locId) state.waitlistFilterLoc = 'all';
-  }
-
-  // Asks which of the two storage area kinds a new location belongs to,
-  // instead of typing a category name freehand. Resolves to the exact
-  // category string (matching CATEGORY_CHOICES) or null if cancelled.
-  function showCategoryChoice(message){
-    return new Promise(function(resolve){
-      state.modal = {
-        kind: 'categoryChoice',
-        message: message,
-        onChoose: function(value){ closeModal(); resolve(value); },
-        onCancel: function(){ closeModal(); resolve(null); }
-      };
-      renderModal();
-    });
-  }
-
-  function renderCategoryChoiceModal(){
-    var m = state.modal;
-    var html = '<div class="modal-overlay"><div class="modal-card">';
-    html += '<div class="modal-message">'+escapeHtml(m.message)+'</div>';
-    html += '<div class="category-choice-list">';
-    CATEGORY_CHOICES.forEach(function(c, i){
-      html += '<button class="btn secondary" data-action="category-choice" data-value="'+escapeAttr(c.value)+'">'+escapeHtml(c.label)+'</button>';
-    });
-    html += '</div>';
-    html += '<div class="modal-actions"><button class="btn secondary small" id="categoryChoiceCancelBtn">Cancel</button></div>';
-    html += '</div></div>';
-    modalRoot.innerHTML = html;
-
-    document.querySelectorAll('[data-action="category-choice"]').forEach(function(btn){
-      btn.addEventListener('click', function(){ m.onChoose(btn.getAttribute('data-value')); });
-    });
-    document.getElementById('categoryChoiceCancelBtn').addEventListener('click', function(){ m.onCancel(); });
-  }
-
   function addNewLocationViaPrompt(){
     return new Promise(function(resolve){
       state.modal = {
@@ -2611,10 +1826,8 @@
         value: '',
         onConfirm: async function(name){
           if (!name){ resolve(null); return; }
-          var category = await showCategoryChoice('Is "'+name+'" a Non-Power Boat Storage location or a Laurel Park Camp Ground Storage location?');
-          if (!category){ resolve(null); return; }
           var id = slugify(name);
-          var newLoc = { id: id, label: name, unitLabel: 'Site #', category: category };
+          var newLoc = { id: id, label: name, unitLabel: 'Rack #' };
           LOCATIONS.push(newLoc);
           state.data[id] = [];
           await saveLocationConfig();
@@ -2627,15 +1840,10 @@
     });
   }
 
-  // Only locations that haven't been removed from the Waitlist section
-  // (see hiddenFromWaitlist) show up here — they stay fully intact over
-  // in Storage Audit either way, this just controls what's pickable when
-  // adding or reassigning a waitlist entry.
   function renderLocationOptionsGrouped(selectedId){
     var categories = [];
     var byCategory = {};
     LOCATIONS.forEach(function(l){
-      if (l.hiddenFromWaitlist && l.id !== selectedId) return;
       var cat = l.category || 'Other';
       if (!byCategory[cat]){ byCategory[cat] = []; categories.push(cat); }
       byCategory[cat].push(l);
@@ -2651,240 +1859,50 @@
     return html;
   }
 
-  // Renders the waitlist location switcher as a row of tabs (one per park,
-  // grouped by category, plus an "All" tab) instead of a dropdown — so
-  // switching which park's queue you're looking at is a single click, and
-  // each tab shows that park's own count so it reads like separate lists.
-  function renderLocationTabs(selectedValue){
+  // Like renderLocationOptionsGrouped, but adds a category-level "All in <category>"
+  // option at the top of each group, so the waitlist can be filtered by a whole
+  // category (e.g. every Non-Power Storage Racks location) rather than one at a time.
+  function renderLocationFilterOptions(selectedValue){
     var categories = [];
     var byCategory = {};
     LOCATIONS.forEach(function(l){
-      if (l.hiddenFromWaitlist) return;
       var cat = l.category || 'Other';
       if (!byCategory[cat]){ byCategory[cat] = []; categories.push(cat); }
       byCategory[cat].push(l);
     });
-    var html = '<div class="wl-loc-tabs">';
-    html += '<button type="button" class="wl-loc-tab'+(selectedValue==='all'?' active':'')+'" data-action="wl-loc-tab" data-loc="all">All<span class="wl-loc-tab-count">'+state.waitlist.length+'</span></button>';
+    var html = '';
     categories.forEach(function(cat){
       var catValue = 'cat:' + cat;
-      var catCount = state.waitlist.filter(function(w){
-        var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-        return wLoc && (wLoc.category || 'Other') === cat;
-      }).length;
-      html += '<span class="wl-loc-tab-group-label">'+escapeHtml(cat)+'</span>';
-      html += '<div class="wl-loc-tab-group">';
-      html += '<button type="button" class="wl-loc-tab'+(selectedValue===catValue?' active':'')+'" data-action="wl-loc-tab" data-loc="'+escapeAttr(catValue)+'">All'+ '<span class="wl-loc-tab-count">'+catCount+'</span></button>';
+      html += '<optgroup label="'+escapeAttr(cat)+'">';
+      html += '<option value="'+escapeAttr(catValue)+'"'+(selectedValue===catValue?' selected':'')+'>— All in '+escapeHtml(cat)+' —</option>';
       byCategory[cat].forEach(function(l){
-        var count = state.waitlist.filter(function(w){ return w.locationId === l.id; }).length;
-        html += '<button type="button" class="wl-loc-tab'+(selectedValue===l.id?' active':'')+'" data-action="wl-loc-tab" data-loc="'+l.id+'">'+escapeHtml(l.label)+'<span class="wl-loc-tab-count">'+count+'</span></button>';
+        html += '<option value="'+l.id+'"'+(selectedValue===l.id?' selected':'')+'>'+escapeHtml(l.label)+'</option>';
       });
-      html += '</div>';
+      html += '</optgroup>';
     });
-    html += '</div>';
     return html;
-  }
-
-  // Each location/park keeps its OWN waitlist numbering (1, 2, 3… within
-  // that location only) — not one shared number across every park. This
-  // is the true order within a single location: everyone requesting it,
-  // sorted by date added, with "Drop Down on List" pinned to the bottom
-  // regardless. Search, the status filter, and the location filter only
-  // ever decide which ROWS are shown on screen — they must never affect
-  // this ordering, or a person's number would appear to change just
-  // because you typed something into the search box.
-  // The numbered queue for a location — everyone requesting it EXCEPT
-  // people already marked "Placed" (they've got their spot; they don't
-  // need a line number anymore and live in their own Placed section
-  // instead), sorted by date added, with "Drop Down on List" pinned to
-  // the bottom regardless.
-  function getLocationWaitlistOrder(locationId){
-    var group = state.waitlist.filter(function(w){ return w.locationId === locationId && w.status !== 'placed'; });
-    group.sort(function(a,b){
-      var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
-      if (aDown && !bDown) return 1;
-      if (bDown && !aDown) return -1;
-      return compareWaitlistOrder(a,b);
-    });
-    return group;
-  }
-
-  // Shared by the active queue and the Placed section: does this entry
-  // match the selected location tab (or category tab) and the search box?
-  function matchesWaitlistLocAndSearch(w){
-    var matchesLoc;
-    if (state.waitlistFilterLoc === 'all'){
-      matchesLoc = true;
-    } else if (state.waitlistFilterLoc.indexOf('cat:') === 0){
-      var filterCat = state.waitlistFilterLoc.slice(4);
-      var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-      matchesLoc = wLoc && (wLoc.category || 'Other') === filterCat;
-    } else {
-      matchesLoc = w.locationId === state.waitlistFilterLoc;
-    }
-    var q = state.search.trim().toLowerCase();
-    var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
-    return matchesLoc && matchesSearch;
-  }
-
-  // Groups a list by location (in the order locations are defined) and,
-  // within each location, by that location's own true queue order — so
-  // the list reads as consecutive per-park queues, e.g. Getaway Park's
-  // 1..N, then Holiday Park's 1..N, rather than one interleaved list.
-  function sortByLocationGroup(list){
-    var locOrderCache = {};
-    list.sort(function(a,b){
-      if (a.locationId !== b.locationId){
-        var ai = LOCATIONS.findIndex(function(l){ return l.id === a.locationId; });
-        var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
-        return ai - bi;
-      }
-      if (!locOrderCache[a.locationId]) locOrderCache[a.locationId] = getLocationWaitlistOrder(a.locationId);
-      var order = locOrderCache[a.locationId];
-      return order.indexOf(a) - order.indexOf(b);
-    });
-    return list;
-  }
-
-  // The active, numbered queue — never includes "Placed" entries, so
-  // they can't sit in both areas at once.
-  function getVisibleWaitlist(){
-    var visible = state.waitlist.filter(function(w){
-      var matchesFilter = state.filter==='all' || w.status===state.filter;
-      return w.status !== 'placed' && matchesFilter && matchesWaitlistLocAndSearch(w);
-    });
-    return sortByLocationGroup(visible);
-  }
-
-  // The separate "Placed" area — everyone marked Placed, regardless of the
-  // status filter pills (those only apply to the active queue above), still
-  // scoped to the current location tab and search box so it stays in sync
-  // with the rest of the view.
-  function getVisiblePlacedWaitlist(){
-    var placed = state.waitlist.filter(function(w){
-      return w.status === 'placed' && matchesWaitlistLocAndSearch(w);
-    });
-    placed.sort(function(a,b){
-      if (a.locationId !== b.locationId){
-        var ai = LOCATIONS.findIndex(function(l){ return l.id === a.locationId; });
-        var bi = LOCATIONS.findIndex(function(l){ return l.id === b.locationId; });
-        return ai - bi;
-      }
-      return (b.placedOn||'').localeCompare(a.placedOn||'') || (b.addedAt - a.addedAt); // most recently placed first
-    });
-    return placed;
-  }
-
-  // Repositions someone within their OWN location's true queue (never the
-  // filtered/searched subset, and never mixed with other locations' queues),
-  // so typing a new number always means "this is their real place in THIS
-  // park's line," regardless of what's currently filtered or searched.
-  async function setWaitlistPosition(id, newPos){
-    var entry = state.waitlist.find(function(w){ return w.id === id; });
-    if (!entry) return;
-    var order = getLocationWaitlistOrder(entry.locationId);
-    var idx = order.findIndex(function(w){ return w.id === id; });
-    if (idx < 0) return;
-    var target = Math.max(1, Math.min(order.length, newPos)) - 1;
-    if (target === idx) return;
-    // Reuse the group's existing sort values (smallest to largest) in the
-    // new order, so a manual move never pushes anyone's slot into the
-    // far future and later sign-ups still slot in by their date.
-    var slots = order.filter(function(w){ return w.status !== 'dropped'; }).map(function(w){ return w.addedAt; }).sort(function(x,y){ return x-y; });
-    var moved = order.splice(idx, 1)[0];
-    order.splice(target, 0, moved);
-    // The line follows the date signed up, so a manual move is only
-    // allowed between people with the same date. Otherwise, change the
-    // person's date instead.
-    for (var q = 1; q < order.length; q++){
-      if (order[q].status === 'dropped' || order[q-1].status === 'dropped') continue;
-      if (waitlistDateKey(order[q-1]) > waitlistDateKey(order[q])){
-        showAlert('Place numbers follow the date signed up (older date = higher in the list). To move '+moved.name+' there, change their "Date placed on waitlist" instead.');
-        return;
-      }
-    }
-    // Re-sequence addedAt for just this location's group so the typed
-    // order sticks, without touching any other location's queue.
-    // ("Drop Down on List" status still pins to the bottom regardless.)
-    var k = 0;
-    order.forEach(function(w){
-      if (w.status === 'dropped') return;
-      w.addedAt = (k < slots.length ? slots[k] : slots[slots.length-1] + k) + k*0; k++;
-    });
-    // Equal slots (same-day signups) need a strict order to stick.
-    for (var j = 1; j < order.length; j++){
-      if (order[j].status !== 'dropped' && order[j-1].status !== 'dropped' && order[j].addedAt <= order[j-1].addedAt){
-        order[j].addedAt = order[j-1].addedAt + 1;
-      }
-    }
-    await saveWaitlist();
-  }
-
-  // Takes a Placed waitlist entry and actually creates (or updates) the
-  // rack/space it was given over in Storage Audit — carrying over their
-  // lot # and marking it Assigned — then removes them from the waitlist,
-  // since Storage Audit is now the record of their spot.
-  async function moveWaitlistEntryToStorageAudit(entry){
-    if (!entry.rackGiven || !entry.rackGiven.trim()){
-      showAlert('Enter which rack/site they were given first, then move them.');
-      return;
-    }
-    var loc = LOCATIONS.find(function(l){ return l.id === entry.locationId; });
-    if (!loc){
-      showAlert('Can\'t find that location anymore — pick a different location for this person first.');
-      return;
-    }
-    var rackId = entry.rackGiven.trim();
-    var units = state.data[loc.id] || (state.data[loc.id] = []);
-    var existing = units.find(function(u){ return u.id.toLowerCase() === rackId.toLowerCase(); });
-    var noteAddition = 'From waitlist: '+entry.name+(entry.phone?' ('+entry.phone+')':'');
-    var confirmMsg = existing
-      ? '"'+rackId+'" already exists in '+loc.label+'\'s Storage Audit. Update it with '+entry.name+'\'s lot # and mark it Assigned, then remove '+entry.name+' from the waitlist?'
-      : 'Create "'+rackId+'" in '+loc.label+'\'s Storage Audit for '+entry.name+', marked Assigned, then remove '+entry.name+' from the waitlist?';
-    showConfirm(confirmMsg, async function(){
-      if (existing){
-        existing.lot = entry.lot || existing.lot;
-        existing.status = 'assigned';
-        existing.notes = existing.notes ? (existing.notes+' | '+noteAddition) : noteAddition;
-      } else {
-        units.push({ id: rackId, lot: entry.lot||'', status: 'assigned', notes: noteAddition, auditedOn: '', auditedBy: '', paidOn: '' });
-      }
-      await saveLocation(loc.id);
-      var idx = state.waitlist.findIndex(function(w){ return w.id === entry.id; });
-      if (idx>-1) state.waitlist.splice(idx,1);
-      await saveWaitlist();
-      logActivity('Moved '+entry.name+' from waitlist to Storage Audit as '+rackId+' in '+loc.label);
-      render();
-    });
   }
 
   function renderWaitlistView(){
     var html = renderSectionToggle();
 
-    html += renderLocationTabs(state.waitlistFilterLoc);
-
     html += '<div class="toolbar">';
     html += '<input type="text" id="wlSearchInput" placeholder="Search by name, phone, or lot #…" value="'+escapeAttr(state.search)+'">';
-    ['all','waiting','contacted','offered','dropped','denied'].forEach(function(f){
+    html += '<select id="wlLocFilter">';
+    html += '<option value="all"'+(state.waitlistFilterLoc==='all'?' selected':'')+'>Any location</option>';
+    html += renderLocationFilterOptions(state.waitlistFilterLoc);
+    if (can('manageLocations')){
+      html += '<option disabled>──────────</option>';
+      html += '<option value="__add_location__">+ Add new location…</option>';
+      html += '<option value="__rename_location__">✎ Rename this location…</option>';
+      html += '<option value="__remove_location__">🗑 Delete this location…</option>';
+    }
+    html += '</select>';
+    ['all','waiting','contacted','offered','placed','dropped','denied'].forEach(function(f){
       var label = f==='all' ? 'All' : WAITLIST_STATUSES[f];
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="wl-filter" data-filter="'+f+'">'+label+'</button>';
     });
     html += '<button class="btn secondary small" data-action="wl-export">Export CSV</button>';
-    if (can('addWaitlist')){
-      html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="wlImportCsvInput" style="display:none;"></label>';
-      if (state.lastWaitlistImportBackup){
-        html += '<button class="btn secondary small undo-btn" data-action="undo-waitlist-import">Undo last import</button>';
-      }
-    }
-    if (can('manageLocations')){
-      html += '<select id="wlLocManage" class="wl-loc-manage-select">';
-      html += '<option value="">⚙ Manage locations…</option>';
-      html += '<option value="__add_location__">+ Add new location…</option>';
-      html += '<option value="__rename_location__">✎ Rename current tab\'s location…</option>';
-      html += '<option value="__remove_location__">🚫 Remove current tab\'s location from Waitlist only…</option>';
-      html += '<option value="__restore_location__">↩ Restore a location to Waitlist…</option>';
-      html += '</select>';
-    }
     html += '</div>';
 
     if (can('addWaitlist')){
@@ -2893,36 +1911,39 @@
       html += '<input type="text" id="wlNewPhone" placeholder="Phone">';
       html += '<input type="text" id="wlNewLot" placeholder="Lot #">';
       html += '<select id="wlNewLoc">';
-      var addDefaultLoc = (state.waitlistFilterLoc && state.waitlistFilterLoc !== 'all' && state.waitlistFilterLoc.indexOf('cat:') !== 0 &&
-        LOCATIONS.some(function(l){ return l.id === state.waitlistFilterLoc; })) ? state.waitlistFilterLoc : null;
-      if (!addDefaultLoc && state.waitlistFilterLoc && state.waitlistFilterLoc.indexOf('cat:') === 0){
-        var catLoc = LOCATIONS.find(function(l){ return !l.hiddenFromWaitlist && (l.category || 'Other') === state.waitlistFilterLoc.slice(4); });
-        if (catLoc) addDefaultLoc = catLoc.id;
-      }
-      if (!addDefaultLoc) addDefaultLoc = LOCATIONS[0] ? LOCATIONS[0].id : null;
-      html += renderLocationOptionsGrouped(addDefaultLoc);
+      html += renderLocationOptionsGrouped(LOCATIONS[0] ? LOCATIONS[0].id : null);
       if (can('manageLocations')){
         html += '<option disabled>──────────</option>';
         html += '<option value="__add_location__">+ Add new location…</option>';
       }
       html += '</select>';
-      html += '<label class="wl-date">Date signed up<input type="date" id="wlNewDate" value="'+todayISO()+'"></label>';
       html += '<button class="btn" data-action="wl-add">+ Add to waitlist</button>';
       html += '</div>';
     } else if (!state.isStaff){
       html += '<div class="readonly-banner">👁 View only — log in above to add or edit waitlist entries.</div>';
     }
 
-    var visible = getVisibleWaitlist();
-    // Build each location's own true position numbers (1..N within that
-    // location only) and remember each location's total count for the
-    // typeable box's upper bound.
-    var truePositions = {};
-    var locCounts = {};
-    LOCATIONS.forEach(function(l){
-      var order = getLocationWaitlistOrder(l.id);
-      locCounts[l.id] = order.length;
-      order.forEach(function(w, i){ truePositions[w.id] = i+1; });
+    var visible = state.waitlist.filter(function(w){
+      var matchesFilter = state.filter==='all' || w.status===state.filter;
+      var matchesLoc;
+      if (state.waitlistFilterLoc === 'all'){
+        matchesLoc = true;
+      } else if (state.waitlistFilterLoc.indexOf('cat:') === 0){
+        var filterCat = state.waitlistFilterLoc.slice(4);
+        var wLoc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
+        matchesLoc = wLoc && (wLoc.category || 'Other') === filterCat;
+      } else {
+        matchesLoc = w.locationId === state.waitlistFilterLoc;
+      }
+      var q = state.search.trim().toLowerCase();
+      var matchesSearch = !q || w.name.toLowerCase().indexOf(q)>-1 || (w.phone||'').toLowerCase().indexOf(q)>-1 || (w.lot||'').toLowerCase().indexOf(q)>-1;
+      return matchesFilter && matchesLoc && matchesSearch;
+    });
+    visible.sort(function(a,b){
+      var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
+      if (aDown && !bDown) return 1;
+      if (bDown && !aDown) return -1;
+      return a.addedAt - b.addedAt;
     });
 
     html += '<div class="status-bar"><span><strong>'+state.waitlist.length+'</strong> total on waitlist</span>';
@@ -2936,92 +1957,44 @@
     } else {
       html += '<div class="wl-list">';
       visible.forEach(function(w, i){
-        var truePos = truePositions[w.id] || (i+1);
-        var locMax = locCounts[w.locationId] || truePos;
-        var posHtml = '<div class="wl-position">';
-        if (can('editWaitlist')){
-          posHtml += '<span class="wl-pos-hash">#</span><input type="number" class="wl-pos-input" min="1" max="'+locMax+'" value="'+truePos+'" data-action="wl-set-position" data-id="'+w.id+'">';
-        } else {
-          posHtml += '#'+truePos;
+        var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
+        var dis = can('editWaitlist') ? '' : ' disabled';
+        html += '<div class="wl-row" data-id="'+w.id+'">';
+        html += '<div class="wl-position">#'+(i+1)+'</div>';
+        html += '<div class="wl-main">';
+        html += '<div class="wl-name-row">';
+        html += '<input type="text" name="wl-name" data-field="name" value="'+escapeAttr(w.name)+'" placeholder="Name"'+dis+'>';
+        html += '<input type="text" name="wl-phone" data-field="phone" value="'+escapeAttr(w.phone)+'" placeholder="Phone"'+dis+'>';
+        html += '<input type="text" name="wl-lot" data-field="lot" value="'+escapeAttr(w.lot)+'" placeholder="Lot #"'+dis+'>';
+        html += '<select data-field="locationId"'+dis+'>';
+        html += renderLocationOptionsGrouped(w.locationId);
+        if (can('manageLocations')){
+          html += '<option disabled>──────────</option>';
+          html += '<option value="__add_location__">+ Add new location…</option>';
         }
-        posHtml += '</div>';
-        html += renderWaitlistRowHtml(w, posHtml);
+        html += '</select>';
+        html += '</div>';
+        html += '<div class="wl-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(w.notes)+'</textarea></div>';
+        html += '</div>';
+        html += '<div class="wl-meta">';
+        html += '<select class="wl-status-select" data-field="status" style="color:'+waitlistColors[w.status]+';border-color:'+waitlistColors[w.status]+'"'+dis+'>';
+        Object.keys(WAITLIST_STATUSES).forEach(function(s){
+          html += '<option value="'+s+'"'+(w.status===s?' selected':'')+' style="color:'+waitlistColors[s]+'">'+WAITLIST_STATUSES[s]+'</option>';
+        });
+        html += '</select>';
+        html += '<label class="wl-date">Date placed on waitlist<input type="date" data-field="dateAdded" value="'+escapeAttr(w.dateAdded)+'"'+dis+'></label>';
+        if (can('deleteWaitlist')){
+          html += '<button class="btn small secondary" data-action="wl-remove">Remove</button>';
+        }
+        html += '</div>';
+        html += '</div>';
       });
       html += '</div>';
     }
-
-    // Placed section — kept entirely separate from the numbered queue
-    // above. Anyone marked "Placed" lands here instead, with no line
-    // number (they already have their spot), still scoped to whichever
-    // location tab and search are active.
-    var visiblePlaced = getVisiblePlacedWaitlist();
-    html += '<div class="wl-placed-section">';
-    html += '<div class="wl-placed-heading">✅ Placed<span class="wl-loc-tab-count">'+visiblePlaced.length+'</span></div>';
-    if (visiblePlaced.length === 0){
-      html += '<div class="empty-state">No one placed yet matching the current location/search.</div>';
-    } else {
-      html += '<div class="wl-list">';
-      visiblePlaced.forEach(function(w){
-        var posHtml = '<div class="wl-position"><span class="wl-placed-check" title="Placed">✅</span></div>';
-        html += renderWaitlistRowHtml(w, posHtml, true);
-      });
-      html += '</div>';
-    }
-    html += '</div>';
 
     root.innerHTML = html;
     attachSectionHandlers();
     attachWaitlistHandlers();
-  }
-
-  // Shared row markup for both the active numbered queue and the Placed
-  // section — everything except the position slot (passed in as posHtml)
-  // is identical, including the generic data-field wiring that
-  // attachWaitlistHandlers() hooks up by data-id. isPlaced adds the extra
-  // "date placed" / "rack given" fields and the move-to-audit button that
-  // only make sense once someone has actually been placed.
-  function renderWaitlistRowHtml(w, posHtml, isPlaced){
-    var dis = can('editWaitlist') ? '' : ' disabled';
-    var html = '<div class="wl-row" data-id="'+w.id+'">';
-    html += posHtml;
-    html += '<div class="wl-main">';
-    html += '<div class="wl-name-row">';
-    html += '<input type="text" name="wl-name" data-field="name" value="'+escapeAttr(w.name)+'" placeholder="Name"'+dis+'>';
-    html += '<input type="text" name="wl-phone" data-field="phone" value="'+escapeAttr(w.phone)+'" placeholder="Phone"'+dis+'>';
-    html += '<input type="text" name="wl-lot" data-field="lot" value="'+escapeAttr(w.lot)+'" placeholder="Lot #"'+dis+'>';
-    html += '<select data-field="locationId"'+dis+'>';
-    html += renderLocationOptionsGrouped(w.locationId);
-    if (can('manageLocations')){
-      html += '<option disabled>──────────</option>';
-      html += '<option value="__add_location__">+ Add new location…</option>';
-    }
-    html += '</select>';
-    html += '</div>';
-    if (isPlaced){
-      var loc = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-      html += '<div class="wl-placed-fields">';
-      html += '<label class="wl-date">Date placed<input type="date" data-field="placedOn" value="'+escapeAttr(w.placedOn||'')+'"'+dis+'></label>';
-      html += '<label class="wl-date">'+(loc?escapeHtml(loc.unitLabel):'Rack/Site #')+' given<input type="text" data-field="rackGiven" value="'+escapeAttr(w.rackGiven||'')+'" placeholder="e.g. 42"'+dis+'></label>';
-      html += '</div>';
-    }
-    html += '<div class="wl-notes"><textarea data-field="notes" placeholder="Notes…"'+dis+'>'+escapeHtml(w.notes)+'</textarea></div>';
-    html += '</div>';
-    html += '<div class="wl-meta">';
-    html += '<select class="wl-status-select" data-field="status" style="color:'+waitlistColors[w.status]+';border-color:'+waitlistColors[w.status]+'"'+dis+'>';
-    Object.keys(WAITLIST_STATUSES).forEach(function(s){
-      html += '<option value="'+s+'"'+(w.status===s?' selected':'')+' style="color:'+waitlistColors[s]+'">'+WAITLIST_STATUSES[s]+'</option>';
-    });
-    html += '</select>';
-    html += '<label class="wl-date">Date placed on waitlist<input type="date" data-field="dateAdded" value="'+escapeAttr(w.dateAdded)+'"'+dis+'></label>';
-    if (isPlaced && can('editWaitlist')){
-      html += '<button class="btn small" data-action="wl-move-to-audit" title="Creates/updates this rack in Storage Audit with their lot #, then removes them from the waitlist">→ Move to Storage Audit</button>';
-    }
-    if (can('deleteWaitlist')){
-      html += '<button class="btn small secondary" data-action="wl-remove">Remove</button>';
-    }
-    html += '</div>';
-    html += '</div>';
-    return html;
   }
 
   function attachWaitlistHandlers(){
@@ -3032,18 +2005,10 @@
       });
     });
 
-    document.querySelectorAll('[data-action="wl-loc-tab"]').forEach(function(tab){
-      tab.addEventListener('click', function(){
-        state.waitlistFilterLoc = tab.getAttribute('data-loc');
-        render();
-      });
-    });
-
-    var wlLocManage = document.getElementById('wlLocManage');
-    if (wlLocManage){
-      wlLocManage.addEventListener('change', function(){
-        var val = wlLocManage.value;
-        wlLocManage.value = '';
+    var wlLocFilter = document.getElementById('wlLocFilter');
+    if (wlLocFilter){
+      wlLocFilter.addEventListener('change', function(){
+        var val = wlLocFilter.value;
 
         if (val === '__add_location__'){
           addNewLocationViaPrompt().then(function(newId){
@@ -3055,10 +2020,12 @@
 
         if (val === '__rename_location__'){
           if (state.waitlistFilterLoc === 'all' || state.waitlistFilterLoc.indexOf('cat:') === 0){
-            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Rename current tab\'s location…".');
+            wlLocFilter.value = state.waitlistFilterLoc;
+            showAlert('Pick a specific location (not "Any location" or a category) from the dropdown first, then choose "Rename this location…".');
             return;
           }
           var current = LOCATIONS.find(function(l){ return l.id === state.waitlistFilterLoc; });
+          wlLocFilter.value = state.waitlistFilterLoc;
           showPrompt('Rename this location:', current.label, async function(newName){
             if (!newName) return;
             current.label = newName;
@@ -3070,26 +2037,36 @@
 
         if (val === '__remove_location__'){
           if (state.waitlistFilterLoc === 'all' || state.waitlistFilterLoc.indexOf('cat:') === 0){
-            showAlert('Click a specific location\'s tab first (not "All" or a category tab), then choose "Remove current tab\'s location from Waitlist only…".');
+            wlLocFilter.value = state.waitlistFilterLoc;
+            showAlert('Pick a specific location (not "Any location" or a category) from the dropdown first, then choose "Delete this location…".');
             return;
           }
-          var visibleCount = LOCATIONS.filter(function(l){ return !l.hiddenFromWaitlist; }).length;
-          if (visibleCount <= 1){
-            showAlert('At least one location has to stay pickable in the Waitlist — add another before removing this one.');
+          if (LOCATIONS.length <= 1){
+            wlLocFilter.value = state.waitlistFilterLoc;
+            showAlert('At least one location has to stay — add another before deleting this one.');
             return;
           }
           var target = LOCATIONS.find(function(l){ return l.id === state.waitlistFilterLoc; });
-          showConfirm('Remove "'+target.label+'" from the Waitlist section only? It stays exactly as-is in Storage Audit — its racks/spaces and audit history are NOT touched. Anyone on the waitlist for it will be reassigned to another location. You can restore it to the Waitlist later from "↩ Restore a location to Waitlist…".', async function(){
-            await hideLocationFromWaitlist(target.id);
+          wlLocFilter.value = state.waitlistFilterLoc;
+          showConfirm('Delete "'+target.label+'"? This also removes its rack/space audit data. Waitlist members requesting it will be reassigned to another location.', async function(){
+            var idx = LOCATIONS.findIndex(function(l){ return l.id === target.id; });
+            if (idx>-1) LOCATIONS.splice(idx,1);
+            delete state.data[target.id];
+            var fallbackId = LOCATIONS[0].id;
+            state.waitlist.forEach(function(w){
+              if (w.locationId === target.id) w.locationId = fallbackId;
+            });
+            await saveLocationConfig();
+            await saveWaitlist();
+            try { await window.storage.delete('audit:' + target.id, true); } catch(e){}
+            state.waitlistFilterLoc = 'all';
             render();
           });
           return;
         }
 
-        if (val === '__restore_location__'){
-          showRestoreWaitlistLocationsModal();
-          return;
-        }
+        state.waitlistFilterLoc = val;
+        render();
       });
     }
 
@@ -3107,43 +2084,6 @@
     if (wlExportBtn){
       wlExportBtn.addEventListener('click', exportWaitlistCsv);
     }
-
-    var wlImportCsvInput = document.getElementById('wlImportCsvInput');
-    if (wlImportCsvInput){
-      wlImportCsvInput.addEventListener('change', function(){
-        var file = wlImportCsvInput.files && wlImportCsvInput.files[0];
-        if (!file) return;
-        importWaitlistCsv(file);
-        wlImportCsvInput.value = '';
-      });
-    }
-
-    var undoWaitlistImportBtn = document.querySelector('[data-action="undo-waitlist-import"]');
-    if (undoWaitlistImportBtn){
-      undoWaitlistImportBtn.addEventListener('click', function(){
-        var backup = state.lastWaitlistImportBackup;
-        if (!backup) return;
-        showConfirm('Undo the last waitlist import? This restores the waitlist to how it was right before that import.', async function(){
-          state.waitlist = backup.snapshot;
-          state.lastWaitlistImportBackup = null;
-          await saveWaitlist();
-          render();
-        });
-      });
-    }
-
-    document.querySelectorAll('[data-action="wl-set-position"]').forEach(function(inp){
-      inp.addEventListener('change', async function(){
-        var id = inp.getAttribute('data-id');
-        var newPos = parseInt(inp.value, 10);
-        if (!newPos || isNaN(newPos)) return; // leave the box alone; don't snap back mid-edit
-        await setWaitlistPosition(id, newPos);
-        render();
-      });
-      inp.addEventListener('keydown', function(e){
-        if (e.key === 'Enter'){ inp.blur(); }
-      });
-    });
 
     var wlNewLocSelect = document.getElementById('wlNewLoc');
     if (wlNewLocSelect){
@@ -3169,8 +2109,6 @@
         var name = nameInput.value.trim();
         if (!name){ nameInput.focus(); return; }
         var locationId = (locSelect.value === '__add_location__') ? LOCATIONS[0].id : locSelect.value;
-        var dateEl = document.getElementById('wlNewDate');
-        var signedUp = (dateEl && isSaneISODate(dateEl.value)) ? dateEl.value : todayISO();
         var entry = {
           id: 'wl-' + Date.now() + '-' + Math.floor(Math.random()*1000),
           name: name,
@@ -3179,19 +2117,9 @@
           locationId: locationId,
           notes: '',
           status: 'waiting',
-          addedAt: addedAtForDate(signedUp),
-          dateAdded: signedUp
+          addedAt: Date.now(),
+          dateAdded: todayISO()
         };
-        // Signing up today (the default) always lands at the very bottom of
-        // that location's line, whatever the other entries' sort values
-        // are. Only an explicitly earlier date slots in above the end.
-        if (signedUp === todayISO()){
-          var maxAt = 0;
-          state.waitlist.forEach(function(w){
-            if (w.locationId === locationId && w.status !== 'placed' && w.status !== 'dropped' && w.addedAt > maxAt) maxAt = w.addedAt;
-          });
-          if (entry.addedAt <= maxAt) entry.addedAt = maxAt + 1;
-        }
         state.waitlist.push(entry);
         await saveWaitlist();
         render();
@@ -3220,268 +2148,42 @@
           });
           return;
         }
-        var evt = (fieldEl.tagName === 'SELECT' || fieldEl.type === 'date') ? 'change' : 'input';
+        var evt = (fieldEl.tagName === 'SELECT') ? 'change' : 'input';
         fieldEl.addEventListener(evt, async function(){
-          if (field === 'dateAdded'){
-            // Only accept a complete, sensible date — a half-typed year
-            // (e.g. 0002) used to send the person to the top of the list.
-            if (!isSaneISODate(fieldEl.value)){ fieldEl.value = entry.dateAdded; return; }
-            entry.dateAdded = fieldEl.value;
-            entry.addedAt = addedAtForDate(fieldEl.value);
-          } else if (field === 'placedOn'){
-            if (fieldEl.value && !isSaneISODate(fieldEl.value)){ fieldEl.value = entry.placedOn || ''; return; }
-            entry.placedOn = fieldEl.value;
-          } else {
-            entry[field] = fieldEl.value;
-          }
-          // The first time someone is marked Placed, stamp today's date as
-          // "Date placed" automatically — staff can still edit it by hand
-          // afterward if the actual placement date was different.
-          if (field === 'status' && fieldEl.value === 'placed' && !entry.placedOn){
-            entry.placedOn = todayISO();
+          entry[field] = fieldEl.value;
+          if (field === 'dateAdded' && fieldEl.value){
+            entry.addedAt = new Date(fieldEl.value + 'T00:00:00').getTime();
           }
           await saveWaitlist();
-          if (field === 'status' || field === 'dateAdded'){
-            render();
-            if (field === 'status' && fieldEl.value === 'placed'){
-              var ps = document.querySelector('.wl-placed-section');
-              if (ps && ps.scrollIntoView) ps.scrollIntoView({behavior:'smooth', block:'start'});
-            }
-          }
+          if (field === 'status' || field === 'dateAdded'){ render(); }
         });
       });
 
-      var moveBtn = rowEl.querySelector('[data-action="wl-move-to-audit"]');
-      if (moveBtn){
-        moveBtn.addEventListener('click', function(){
-          moveWaitlistEntryToStorageAudit(entry);
-        });
-      }
-
       var removeBtn = rowEl.querySelector('[data-action="wl-remove"]');
       if (removeBtn){
-        removeBtn.addEventListener('click', async function(){
-          var idx = state.waitlist.findIndex(function(w){ return w.id === id; });
-          if (idx>-1) state.waitlist.splice(idx,1);
-          await saveWaitlist();
-          render();
+        removeBtn.addEventListener('click', function(){
+          showConfirm('Remove '+entry.name+' from the waitlist?', async function(){
+            var idx = state.waitlist.findIndex(function(w){ return w.id === id; });
+            if (idx>-1) state.waitlist.splice(idx,1);
+            await saveWaitlist();
+            render();
+          });
         });
       }
-    });
-  }
-
-  // Basic CSV parser supporting quoted fields with escaped "" quotes,
-  // matching the format our own Export CSV buttons produce.
-  function parseCsv(text){
-    var rows = [];
-    var row = [];
-    var field = '';
-    var inQuotes = false;
-    var i = 0;
-    text = String(text||'').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    while (i < text.length){
-      var c = text[i];
-      if (inQuotes){
-        if (c === '"'){
-          if (text[i+1] === '"'){ field += '"'; i += 2; continue; }
-          inQuotes = false; i++; continue;
-        }
-        field += c; i++; continue;
-      } else {
-        if (c === '"'){ inQuotes = true; i++; continue; }
-        if (c === ','){ row.push(field); field=''; i++; continue; }
-        if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
-        field += c; i++; continue;
-      }
-    }
-    if (field.length>0 || row.length>0){ row.push(field); rows.push(row); }
-    rows = rows.filter(function(r){ return !(r.length===1 && r[0]===''); });
-    return rows;
-  }
-
-  // Reads either a real CSV (as text) or a real Excel file (.xlsx/.xls, as
-  // binary via SheetJS) and resolves to the same shape either way: an array
-  // of rows, each row an array of plain string cell values.
-  // Decodes raw file bytes as text, preferring strict UTF-8. If the bytes
-  // aren't valid UTF-8 (a very common issue with CSVs exported from Excel,
-  // which often use Windows-1252 instead), falls back to that encoding
-  // instead of silently producing garbled/mangled characters.
-  function decodeTextSmart(buffer){
-    var bytes = new Uint8Array(buffer);
-    try {
-      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    } catch(e){
-      return new TextDecoder('windows-1252').decode(bytes);
-    }
-  }
-
-  function readSpreadsheetFile(file){
-    return new Promise(function(resolve, reject){
-      var name = (file.name || '').toLowerCase();
-      var isExcel = name.endsWith('.xlsx') || name.endsWith('.xls') ||
-        file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        file.type === 'application/vnd.ms-excel';
-
-      if (!isExcel){
-        var textReader = new FileReader();
-        textReader.onerror = function(){ reject(new Error('read failed')); };
-        textReader.onload = function(){
-          try { resolve(parseCsv(decodeTextSmart(textReader.result))); }
-          catch(e){ reject(e); }
-        };
-        textReader.readAsArrayBuffer(file);
-        return;
-      }
-
-      if (typeof XLSX === 'undefined'){
-        reject(new Error('Excel support failed to load'));
-        return;
-      }
-      var binReader = new FileReader();
-      binReader.onerror = function(){ reject(new Error('read failed')); };
-      binReader.onload = function(){
-        try {
-          var data = new Uint8Array(binReader.result);
-          var workbook = XLSX.read(data, { type: 'array' });
-          var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          var rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, defval: '' });
-          rows = rows.map(function(r){
-            return r.map(function(cell){ return (cell === null || cell === undefined) ? '' : String(cell).trim(); });
-          }).filter(function(r){ return r.some(function(c){ return c !== ''; }); });
-          resolve(rows);
-        } catch(e){ reject(e); }
-      };
-      binReader.readAsArrayBuffer(file);
-    });
-  }
-
-  function rackStatusKeyFromLabel(label){
-    var map = { 'vacant':'vacant', 'assigned':'assigned', 'paid':'paid', 'needs repair':'repair', 'removal':'removal', 'short term':'shortterm' };
-    return map[(label||'').trim().toLowerCase()] || null;
-  }
-
-  // Reads a rack/space file (CSV or Excel, matching our own Export CSV
-  // columns: ID, Lot #, Status, Notes, Audited On, Audited By) and upserts
-  // by ID into this location's list — existing racks get updated, new IDs
-  // get added.
-  function importRackCsv(file, loc){
-    readSpreadsheetFile(file).then(async function(rows){
-      if (!rows.length){ showAlert('That file has no rows.'); return; }
-      var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'id') ? 1 : 0;
-      var units = state.data[loc.id] || (state.data[loc.id] = []);
-      state.lastRackImportBackup = {
-        locId: loc.id,
-        label: loc.label,
-        snapshot: JSON.parse(JSON.stringify(units))
-      };
-      var added = 0, updated = 0;
-      for (var i = startIdx; i < rows.length; i++){
-        var r = rows[i];
-        var id = (r[0]||'').trim();
-        if (!id) continue;
-        var lot = (r[1]||'').trim();
-        var statusKey = rackStatusKeyFromLabel(r[2]);
-        var notes = (r[3]||'').trim();
-        var auditedOn = (r[4]||'').trim();
-        var auditedBy = (r[5]||'').trim();
-        var paidOn = (r[6]||'').trim();
-        var existing = units.find(function(u){ return u.id.toLowerCase() === id.toLowerCase(); });
-        if (existing){
-          existing.lot = lot;
-          if (statusKey) existing.status = statusKey;
-          existing.notes = notes;
-          existing.auditedOn = auditedOn;
-          existing.auditedBy = auditedBy;
-          if (paidOn) existing.paidOn = paidOn;
-          updated++;
-        } else {
-          units.push({ id: id, lot: lot, status: statusKey || 'vacant', notes: notes, auditedOn: auditedOn, auditedBy: auditedBy, paidOn: paidOn });
-          added++;
-        }
-      }
-      await saveLocation(loc.id);
-      render();
-      showAlert('Imported: '+added+' added, '+updated+' updated.');
-    }).catch(function(e){
-      showAlert('Couldn\'t read that file. Make sure it\'s a CSV or Excel file in the same format as Export CSV.');
-    });
-  }
-
-  function waitlistStatusKeyFromLabel(label){
-    var found = 'waiting';
-    Object.keys(WAITLIST_STATUSES).forEach(function(k){
-      if (WAITLIST_STATUSES[k].toLowerCase() === (label||'').trim().toLowerCase()) found = k;
-    });
-    return found;
-  }
-
-  async function resolveLocationIdByLabelForImport(label){
-    label = (label||'').trim();
-    if (!label) return LOCATIONS[0].id;
-    var existing = LOCATIONS.find(function(l){ return l.label.toLowerCase() === label.toLowerCase(); });
-    if (existing) return existing.id;
-    var id = slugify(label);
-    var newLoc = { id: id, label: label, unitLabel: 'Site #', category: 'Other' };
-    LOCATIONS.push(newLoc);
-    state.data[id] = [];
-    await saveLocationConfig();
-    await saveLocation(id);
-    return id;
-  }
-
-  // Reads a waitlist file (CSV or Excel, matching our own Export CSV
-  // columns: Position, Name, Phone, Lot #, Location, Status, Notes, Date
-  // Added) and appends each row as a new waitlist entry. A Location name
-  // that doesn't exist yet is created automatically (its own new park,
-  // category "Other").
-  function importWaitlistCsv(file){
-    readSpreadsheetFile(file).then(async function(rows){
-      if (!rows.length){ showAlert('That file has no rows.'); return; }
-      var startIdx = (rows[0][0] && rows[0][0].trim().toLowerCase() === 'position') ? 1 : 0;
-      state.lastWaitlistImportBackup = {
-        label: 'waitlist',
-        snapshot: JSON.parse(JSON.stringify(state.waitlist))
-      };
-      var addedCount = 0;
-      for (var i = startIdx; i < rows.length; i++){
-        var r = rows[i];
-        var name = (r[1]||'').trim();
-        if (!name) continue;
-        var phone = (r[2]||'').trim();
-        var lot = (r[3]||'').trim();
-        var locationId = await resolveLocationIdByLabelForImport(r[4]);
-        var statusKey = waitlistStatusKeyFromLabel(r[5]);
-        var notes = (r[6]||'').trim();
-        var dateAddedRaw = (r[7]||'').trim();
-        var dateAdded = dateAddedRaw || todayISO();
-        var parsedDate = new Date(dateAdded);
-        var addedAt = isNaN(parsedDate.getTime()) ? Date.now() : parsedDate.getTime();
-        state.waitlist.push({
-          id: 'wl-' + Date.now() + '-' + Math.floor(Math.random()*100000) + '-' + i,
-          name: name, phone: phone, lot: lot, locationId: locationId,
-          notes: notes, status: statusKey, addedAt: addedAt, dateAdded: dateAdded
-        });
-        addedCount++;
-      }
-      await saveWaitlist();
-      render();
-      showAlert('Imported '+addedCount+' waitlist entr'+(addedCount===1?'y':'ies')+'.');
-    }).catch(function(e){
-      showAlert('Couldn\'t read that file. Make sure it\'s a CSV or Excel file in the same format as Export CSV.');
     });
   }
 
   function exportWaitlistCsv(){
-    var rows = [['Position','Name','Phone','Lot #','Location','Status','Notes','Date Added','Date Placed','Rack/Site Given']];
+    var rows = [['Position','Name','Phone','Lot #','Location','Status','Notes','Date Added']];
     var sorted = state.waitlist.slice().sort(function(a,b){
       var aDown = a.status === 'dropped', bDown = b.status === 'dropped';
       if (aDown && !bDown) return 1;
       if (bDown && !aDown) return -1;
-      return compareWaitlistOrder(a,b);
+      return a.addedAt - b.addedAt;
     });
     sorted.forEach(function(w, i){
       var locObj = LOCATIONS.find(function(l){ return l.id === w.locationId; });
-      rows.push([i+1, w.name, w.phone, w.lot, locObj ? locObj.label : w.locationId, WAITLIST_STATUSES[w.status], w.notes, w.dateAdded, w.placedOn||'', w.rackGiven||'']);
+      rows.push([i+1, w.name, w.phone, w.lot, locObj ? locObj.label : w.locationId, WAITLIST_STATUSES[w.status], w.notes, w.dateAdded]);
     });
     var csv = rows.map(function(r){
       return r.map(function(cell){
