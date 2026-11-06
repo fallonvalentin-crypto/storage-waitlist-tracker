@@ -332,6 +332,44 @@
     position:fixed;inset:0;background:rgba(18,50,71,0.45);
     display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;
   }
+.sm-svg{display:block;width:100%;min-width:860px;height:auto;background:#dfe1dc;}
+  .sm-spot{cursor:pointer;}
+  .sm-spot text{pointer-events:none;font-family:inherit;}
+  .sm-spot:hover rect{filter:brightness(0.93);}
+  .sm-spot:focus{outline:none;}
+  .sm-spot:focus-visible rect,.sm-spot.sel rect{stroke:#22261f;stroke-width:5;}
+  .sm-spot.dim{opacity:0.25;}
+  .sitemap-count{font-size:0.82rem;color:var(--dock-wood);}
+  .sitemap-extras{margin-top:10px;font-size:0.8rem;}
+  .sm-chip{border:2px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;margin:3px 4px 0 0;font-size:0.75rem;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .sm-chip.sel{outline:3px solid var(--deep-water);}
+  .sitemap-overlay{position:fixed;inset:0;background:rgba(18,50,71,0.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:10px;}
+  .sitemap-card{background:#fff;border-radius:12px;padding:14px 16px;width:100%;max-width:1200px;max-height:96vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,0.3);}
+  .sitemap-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
+  .sitemap-head .um-title{flex:1 1 auto;}
+  .sitemap-search{padding:7px 10px;border:2px solid var(--line);border-radius:7px;font-size:0.85rem;min-width:180px;}
+  .sitemap-editbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--dock-wood-light);padding:8px 10px;border-radius:8px;margin-bottom:8px;font-size:0.82rem;}
+  .sitemap-msg{font-size:0.8rem;color:var(--dock-wood);}
+  .sitemap-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;margin-bottom:8px;}
+  .sitemap-legend i{display:inline-block;width:14px;height:14px;border:2px solid;border-radius:4px;vertical-align:-2px;margin-right:4px;}
+  .sitemap-scroll{overflow:auto;border:2px solid var(--line);border-radius:8px;max-height:70vh;}
+  .sitemap-canvas{position:relative;min-width:900px;background:#EFE9DA;}
+  .sitemap-canvas.editing{outline:3px dashed var(--dock-wood);outline-offset:-3px;}
+  .sitemap-bg{display:block;width:100%;height:auto;user-select:none;pointer-events:none;}
+  .sitemap-ratio{padding-top:58%;}
+  .sm-marker{position:absolute;transform:translate(-50%,-50%);min-width:46px;max-width:92px;padding:3px 5px;border:2px solid;border-radius:6px;cursor:pointer;line-height:1.15;text-align:center;font-family:inherit;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,0.25);touch-action:none;}
+  .sm-marker b{display:block;font-size:0.72rem;}
+  .sm-marker span{display:block;font-size:0.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sitemap-canvas.editing .sm-marker{cursor:grab;}
+  .sm-marker.selected{outline:3px solid var(--deep-water);z-index:5;}
+  .sm-marker.late{border-width:3px;border-color:var(--remove)!important;}
+  .sm-marker.dim{opacity:0.25;}
+  .sm-marker.hit{outline:3px solid #E5B80B;z-index:4;}
+  .sitemap-panel{margin-top:10px;border:2px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper);}
+  .sitemap-panel-title{font-weight:800;margin-bottom:6px;}
+  .sitemap-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:8px 0;}
+  .sitemap-fields label{font-size:0.75rem;font-weight:700;color:var(--dock-wood);display:flex;flex-direction:column;gap:3px;}
+  .sitemap-fields input,.sitemap-fields select,.sitemap-panel select,.sitemap-notes{padding:8px 9px;border:2px solid var(--line);border-radius:7px;font-size:0.88rem;font-family:inherit;color:var(--ink);width:100%;}
   .modal-card{
     background:#fff;border-radius:12px;padding:20px 22px;max-width:360px;width:100%;
     box-shadow:0 10px 30px rgba(0,0,0,0.25);
@@ -443,19 +481,43 @@
 
   // Mimics the same shape Claude's window.storage used, so none of the
   // app code below (which calls window.storage.get/set/delete) needs to change.
+  // SAFETY: if the database can't be READ for any reason other than "this
+  // item doesn't exist yet" (expired rules, no internet, permission error),
+  // the app must not treat that as "empty" and save defaults over real data.
+  // So after any such read failure, all writes and deletes are blocked until
+  // the page is reloaded, and a red banner explains why.
+  var storageBlocked = false;
+  function blockStorage(err){
+    if (storageBlocked) return;
+    storageBlocked = true;
+    console.error('Storage read failed — writes blocked to protect saved data:', err);
+    function addBanner(){
+      var d = document.createElement('div');
+      d.id = 'storageBlockedBanner';
+      d.style.cssText = 'position:sticky;top:0;z-index:5000;background:#C0392B;color:#fff;padding:10px 16px;font:600 14px sans-serif;text-align:center;';
+      d.textContent = 'Can\u2019t reach the saved data right now, so saving is turned off to protect it. Check your internet connection and Firebase rules, then refresh. Nothing has been deleted.';
+      document.body.insertBefore(d, document.body.firstChild);
+    }
+    if (document.body) addBanner(); else document.addEventListener('DOMContentLoaded', addBanner);
+  }
   window.storage = {
     get: function(key){
       return db.collection(FIRESTORE_COLLECTION).doc(key).get().then(function(snap){
-        if (!snap.exists) { throw new Error('not found: ' + key); }
+        if (!snap.exists) { var nf = new Error('not found: ' + key); nf.notFound = true; throw nf; }
         return { key: key, value: snap.data().value };
+      }).catch(function(e){
+        if (!e || !e.notFound) blockStorage(e);
+        throw e;
       });
     },
     set: function(key, value){
+      if (storageBlocked) return Promise.reject(new Error('writes blocked: data could not be read'));
       return db.collection(FIRESTORE_COLLECTION).doc(key).set({ value: value }).then(function(){
         return { key: key, value: value };
       });
     },
     delete: function(key){
+      if (storageBlocked) return Promise.reject(new Error('writes blocked: data could not be read'));
       return db.collection(FIRESTORE_COLLECTION).doc(key).delete().then(function(){
         return { key: key, deleted: true };
       });
@@ -751,6 +813,303 @@
   function showAlert(message){
     state.modal = { kind: 'alert', message: message };
     renderModal();
+  }
+
+  // ---------------------------------------------------------------------
+  // Dry Dock interactive site map — the real yard layout (about 20 short
+  // spots along the top, the R1–R23 center island, R24–R28 west, L15–L18
+  // east, and R29–R31 + L1–L14 along the south). Every spot is clickable:
+  // see who has it, or assign someone (typed in, or picked from the Dry Dock
+  // waitlist). Spots are matched to Storage Audit spaces by number ("R-5"
+  // and "R5" are the same spot); a spot with no space yet is created in
+  // Storage Audit the first time someone is assigned to it. Any existing
+  // Dry Dock spaces that aren't on this layout appear in a tray under the
+  // map so nothing is hidden.
+  // ---------------------------------------------------------------------
+  var siteMapUI = { selected: null, search: '' };
+
+  var SM_ZONE = {
+    short: { label: 'Short spot', line: '#e0559b', fill: '#f9d9e9', note: '20 ft and under' },
+    reg:   { label: 'Regular craft', line: '#2f6fd0', fill: '#d8e5fa', note: '18–25 ft' },
+    large: { label: 'Large craft', line: '#2e9a55', fill: '#d6efdf', note: '28 ft and up' }
+  };
+  var SM_OCCUPIED = { assigned:'--assigned', paid:'--paid', shortterm:'--shortterm', repair:'--repair', removal:'--remove' };
+
+  function smNorm(id){ return String(id||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+  function smUnitId(spotId){ return spotId.replace(/^([A-Z]+)-?(\d+)$/, '$1-$2'); }
+
+  var SM_SPOTS = (function(){
+    var spots = [];
+    function add(id, x, y, w, h, area){
+      var z = id.charAt(0) === 'R' ? 'reg' : (id.charAt(0) === 'L' ? 'large' : 'short');
+      spots.push({ id:id, x:x, y:y, w:w, h:h, area:area, zone:z });
+    }
+    var SHORT = 20, sx = 215, sLen = 1445, sW = sLen / SHORT;
+    for (var i = 0; i < SHORT; i++) add('S-'+(i+1), sx + i*sW + 3, 30, sW - 6, 58, 'Short spots');
+    var cx0 = 450, cw = 60, top = 290, rowH = 112, mid = 410;
+    for (var a = 0; a < 11; a++){
+      add('R-'+(a+1), cx0 + a*cw + 3, top, cw - 6, rowH, 'Center island');
+      add('R-'+(23-a), cx0 + a*cw + 3, mid + 8, cw - 6, rowH, 'Center island');
+    }
+    add('R-12', cx0 + 11*cw + 3, mid + 8, cw - 6, rowH, 'Center island');
+    for (var b = 0; b < 5; b++) add('R-'+(24+b), 34, 420 + b*64 + 4, 142, 56, 'West perimeter');
+    ['L-18','L-17','L-16','L-15'].forEach(function(id, k){ add(id, 1384, 455 + k*64 + 4, 242, 56, 'East perimeter'); });
+    var south = ['R-29','R-30','R-31'];
+    for (var c = 1; c <= 14; c++) south.push('L-'+c);
+    south.forEach(function(id, k){ add(id, 280 + k*60 + 3, 825, 54, 290, 'South perimeter'); });
+    return spots;
+  })();
+
+  function smScenery(){
+    var s = '';
+    var SHORT = 20, sx = 215, sLen = 1445;
+    s += '<rect x="'+sx+'" y="92" width="'+sLen+'" height="14" fill="#6b665c"/>';
+    var cx0 = 450, cw = 60, top = 290, rowH = 112, mid = 410;
+    for (var i = 0; i <= 11; i++) s += '<line x1="'+(cx0+i*cw)+'" y1="'+(top-6)+'" x2="'+(cx0+i*cw)+'" y2="'+(mid+8+rowH+6)+'" stroke="#6b665c" stroke-width="4" stroke-linecap="round"/>';
+    var islandEnd = cx0 + 11*cw;
+    s += '<line x1="'+(islandEnd+cw)+'" y1="'+(mid-2)+'" x2="'+(islandEnd+cw)+'" y2="'+(mid+8+rowH+6)+'" stroke="#6b665c" stroke-width="4" stroke-linecap="round"/>';
+    s += '<line x1="'+(cx0-10)+'" y1="'+(mid+4)+'" x2="'+(islandEnd+cw+10)+'" y2="'+(mid+4)+'" stroke="#6b665c" stroke-width="1.5" stroke-dasharray="4 6"/>';
+    for (var p = 0; p < 11; p++) s += '<circle cx="'+(cx0+p*cw+cw/2)+'" cy="'+(mid+4)+'" r="8" fill="#f9faf8" stroke="#6b665c" stroke-width="3"/>';
+    s += '<circle cx="'+(islandEnd+cw/2)+'" cy="'+(mid+4)+'" r="8" fill="#f9faf8" stroke="#6b665c" stroke-width="3"/>';
+    s += '<rect x="12" y="412" width="16" height="352" fill="#6b665c"/>';
+    for (var w = 0; w <= 5; w++) s += '<line x1="30" y1="'+(420+w*64)+'" x2="180" y2="'+(420+w*64)+'" stroke="#6b665c" stroke-width="4" stroke-linecap="round"/>';
+    s += '<rect x="1632" y="447" width="16" height="272" fill="#6b665c"/>';
+    for (var e = 0; e <= 4; e++) s += '<line x1="1380" y1="'+(455+e*64)+'" x2="1630" y2="'+(455+e*64)+'" stroke="#6b665c" stroke-width="4" stroke-linecap="round"/>';
+    for (var q = 0; q <= 17; q++) s += '<line x1="'+(280+q*60)+'" y1="819" x2="'+(280+q*60)+'" y2="1119" stroke="#6b665c" stroke-width="4" stroke-linecap="round"/>';
+    s += '<rect x="272" y="1119" width="1096" height="14" fill="#6b665c"/>';
+    var flow = ['M0 140 H420','M210 140 C300 150 312 250 312 392','M296 520 C300 640 380 680 488 680','M1036 712 C1180 712 1228 680 1228 548','M1246 350 C1250 230 1230 158 1066 158'];
+    flow.forEach(function(d){ s += '<path d="'+d+'" fill="none" stroke="#2f5f77" stroke-width="4" stroke-linecap="round" marker-end="url(#smah)"/>'; });
+    s += '<text x="14" y="58" font-size="20" font-weight="700" letter-spacing="2" fill="#e0559b">ALL SHORT SPOTS</text>';
+    s += '<text x="14" y="82" font-size="15" font-weight="700" fill="#5f655a">≈20 · 20 ft and under</text>';
+    s += '<text x="14" y="128" font-size="15" font-weight="700" fill="#5f655a">ENTRANCE</text>';
+    return s;
+  }
+
+  function smTrunc(t, n){ t = String(t||''); return t.length > n ? t.slice(0, n-1) + '…' : t; }
+
+  function smUnitFor(spot){
+    var units = state.data['dry-dock'] || [];
+    var key = smNorm(spot.id);
+    return units.find(function(u){ return smNorm(u.id) === key; }) || null;
+  }
+
+  function openSiteMap(){
+    siteMapUI = { selected: null, search: '' };
+    renderSiteMap();
+  }
+  function closeSiteMap(){
+    var el = document.getElementById('siteMapRoot');
+    if (el) el.remove();
+    render();
+  }
+
+  function smPaymentLine(u, loc){
+    var ps = u ? paymentStatusFor(u, loc) : null;
+    if (!ps) return '';
+    if (ps.note === 'paid') return '✓ Paid for '+ps.year;
+    if (ps.days !== null && ps.days < 0) return '⚠ LATE PAYMENT — '+Math.abs(ps.days)+' day(s) past due (was due '+ps.dueStr+')';
+    if (ps.days !== null) return (ps.year?'UNPAID — due ':'Due ')+ps.dueStr+' ('+ps.days+' day(s))';
+    if (ps.note === 'upcoming') return 'UNPAID for '+ps.year+' — window opens '+ps.startStr+', due '+ps.dueStr;
+    return '';
+  }
+
+  function renderSiteMap(){
+    var loc = LOCATIONS.find(function(l){ return l.id === 'dry-dock'; });
+    var units = state.data['dry-dock'] || (state.data['dry-dock'] = []);
+    var canAssign = can('editRackFields');
+    var q = siteMapUI.search.trim().toLowerCase();
+
+    var root = document.getElementById('siteMapRoot');
+    if (!root){
+      root = document.createElement('div');
+      root.id = 'siteMapRoot';
+      document.body.appendChild(root);
+    }
+    var onMap = {};
+    var counts = { total: SM_SPOTS.length, occupied: 0 };
+
+    var svg = '<svg id="smSvg" viewBox="0 0 1660 1180" class="sm-svg" role="img" aria-label="Dry Dock storage layout">';
+    svg += '<defs><marker id="smah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f5f77"/></marker></defs>';
+    svg += smScenery();
+    SM_SPOTS.forEach(function(sp){
+      var u = smUnitFor(sp);
+      if (u) onMap[u.id] = true;
+      var z = SM_ZONE[sp.zone];
+      var occ = u && SM_OCCUPIED[u.status];
+      if (occ) counts.occupied++;
+      var fill = occ ? 'var('+occ+')' : z.fill;
+      var line = occ ? 'var('+occ+')' : z.line;
+      var txt = occ ? '#fff' : '#22261f';
+      var ps = u ? paymentStatusFor(u, loc) : null;
+      var late = ps && ps.days !== null && ps.days < 0;
+      var who = u && u.assignee ? u.assignee : '';
+      var hay = (sp.id+' '+(u?u.id:'')+' '+who+' '+(u&&u.lot?u.lot:'')).toLowerCase();
+      var dim = q && hay.indexOf(q) === -1;
+      var hit = q && !dim;
+      var sel = siteMapUI.selected === sp.id;
+      var cx = sp.x + sp.w/2, cy = sp.y + sp.h/2;
+      svg += '<g class="sm-spot'+(dim?' dim':'')+(sel?' sel':'')+'" data-spot="'+sp.id+'" tabindex="0" role="button" aria-label="'+escapeAttr(sp.id+', '+z.label+(who?', '+who:', open'))+'">';
+      svg += '<title>'+escapeHtml(sp.id+' · '+z.label+(who?' — '+who:'')+(u&&u.lot?' (Lot '+u.lot+')':''))+'</title>';
+      svg += '<rect x="'+sp.x+'" y="'+sp.y+'" width="'+sp.w+'" height="'+sp.h+'" rx="3" fill="'+fill+'" stroke="'+(late?'#d23a2f':(hit?'#f2b13e':line))+'" stroke-width="'+(late||hit||sel?5:2)+'"'+(late?' stroke-dasharray="10 5"':'')+'/>';
+      var idLabel = sp.id.replace('-','');
+      if (sp.h > sp.w * 2){
+        svg += '<text x="'+cx+'" y="'+(sp.y+28)+'" text-anchor="middle" font-size="20" font-weight="700" fill="'+txt+'">'+idLabel+'</text>';
+        if (who) svg += '<text transform="translate('+cx+','+(sp.y+sp.h/2+20)+') rotate(-90)" text-anchor="middle" font-size="14" font-weight="600" fill="'+txt+'">'+escapeHtml(smTrunc(who, 22))+'</text>';
+      } else {
+        var big = sp.w > sp.h && sp.zone !== 'short';
+        svg += '<text x="'+cx+'" y="'+(who?cy-11:cy)+'" text-anchor="middle" dominant-baseline="central" font-size="'+(big?21:19)+'" font-weight="700" fill="'+txt+'">'+idLabel+'</text>';
+        if (who) svg += '<text x="'+cx+'" y="'+(cy+(big?14:16))+'" text-anchor="middle" dominant-baseline="central" font-size="'+(big?14:12)+'" font-weight="600" fill="'+txt+'">'+escapeHtml(smTrunc(who, Math.floor(sp.w/(big?8:7))))+'</text>';
+      }
+      svg += '</g>';
+    });
+    svg += '</svg>';
+
+    var extras = units.filter(function(u){ return !onMap[u.id]; });
+
+    var h = '<div class="sitemap-overlay"><div class="sitemap-card">';
+    h += '<div class="sitemap-head"><div class="um-title" style="margin:0;">🗺 Dry Dock Site Map</div>';
+    h += '<span class="sitemap-count"><b>'+counts.occupied+'</b> of '+counts.total+' spots taken</span>';
+    h += '<input type="text" id="smSearch" class="sitemap-search" placeholder="Find a spot, name or lot…" value="'+escapeAttr(siteMapUI.search)+'">';
+    h += '<button class="btn small secondary" id="smCloseBtn">Close</button></div>';
+    h += '<div class="sitemap-legend">';
+    ['short','reg','large'].forEach(function(k){
+      h += '<span><i style="background:'+SM_ZONE[k].fill+';border-color:'+SM_ZONE[k].line+';"></i>'+SM_ZONE[k].label+' · '+SM_ZONE[k].note+' (open)</span>';
+    });
+    ['assigned','paid','shortterm','repair','removal'].forEach(function(s){
+      h += '<span><i style="background:var('+SM_OCCUPIED[s]+');border-color:var('+SM_OCCUPIED[s]+');"></i>'+statusLabel(s)+'</span>';
+    });
+    h += '<span><i style="background:#fff;border:3px dashed #d23a2f;"></i>Late payment</span></div>';
+    h += '<div class="sitemap-scroll">'+svg+'</div>';
+
+    if (extras.length){
+      h += '<div class="sitemap-extras"><b>Other Dry Dock spaces not on this layout:</b> ';
+      extras.forEach(function(u){
+        var occ = SM_OCCUPIED[u.status];
+        h += '<button type="button" class="sm-chip'+(siteMapUI.selected===u.id?' sel':'')+'" data-unit="'+escapeAttr(u.id)+'" style="'+(occ?'background:var('+occ+');color:#fff;border-color:var('+occ+');':'')+'">'+escapeHtml(u.id)+(u.assignee?' · '+escapeHtml(smTrunc(u.assignee,12)):'')+'</button>';
+      });
+      h += '</div>';
+    }
+
+    // Assign panel
+    var selSpot = siteMapUI.selected ? SM_SPOTS.find(function(s){ return s.id === siteMapUI.selected; }) : null;
+    var sel = selSpot ? smUnitFor(selSpot) : (siteMapUI.selected ? units.find(function(u){ return u.id === siteMapUI.selected; }) : null);
+    if (siteMapUI.selected && (selSpot || sel)){
+      var dis = canAssign ? '' : ' disabled';
+      var cur = sel || { id: selSpot ? smUnitId(selSpot.id) : '', lot:'', status:'vacant', notes:'', paidOn:'', assignee:'' };
+      var statusKeys = ['vacant','assigned','paid','shortterm','repair','removal'];
+      var waiters = state.waitlist.filter(function(w){ return w.locationId === 'dry-dock' && w.status !== 'placed'; }).sort(compareWaitlistOrder);
+      h += '<div class="sitemap-panel">';
+      h += '<div class="sitemap-panel-title">Space '+escapeHtml(selSpot ? selSpot.id : cur.id)+(selSpot?' · '+SM_ZONE[selSpot.zone].label+' · '+selSpot.area:'')+(sel?'':' <small>(not in Storage Audit yet — saving creates it)</small>')+'</div>';
+      if (canAssign && waiters.length){
+        h += '<label class="payment-settings-label">Pick from Dry Dock waitlist (oldest first)</label>';
+        h += '<select id="smPick"><option value="">— type a name instead —</option>';
+        waiters.forEach(function(w, i){
+          h += '<option value="'+escapeAttr(w.id)+'">#'+(i+1)+' '+escapeHtml(w.name)+(w.lot?' (Lot '+escapeHtml(w.lot)+')':'')+'</option>';
+        });
+        h += '</select>';
+      }
+      h += '<div class="sitemap-fields">';
+      h += '<label>Assigned to<input type="text" id="smName" value="'+escapeAttr(cur.assignee||'')+'" placeholder="Member name"'+dis+'></label>';
+      h += '<label>Lot #<input type="text" id="smLot" value="'+escapeAttr(cur.lot||'')+'"'+dis+'></label>';
+      h += '<label>Status<select id="smStatus"'+dis+'>';
+      statusKeys.forEach(function(s){ h += '<option value="'+s+'"'+(cur.status===s?' selected':'')+'>'+statusLabel(s)+'</option>'; });
+      h += '</select></label>';
+      h += '<label>Paid on<input type="date" id="smPaid" value="'+escapeAttr(cur.paidOn||'')+'"'+dis+'></label>';
+      h += '</div>';
+      h += '<label class="payment-settings-label">Notes</label><textarea id="smNotes" rows="2" class="sitemap-notes"'+dis+'>'+escapeHtml(cur.notes||'')+'</textarea>';
+      var pl = smPaymentLine(sel, loc);
+      if (pl) h += '<div class="um-hint">'+pl+'</div>';
+      h += '<div class="modal-actions">';
+      if (canAssign){
+        if (sel) h += '<button class="btn secondary small" id="smUnassign">Unassign / make vacant</button>';
+        h += '<button class="btn small" id="smSave">Save</button>';
+      }
+      h += '<button class="btn secondary small" id="smPanelClose">Close</button></div>';
+      h += '</div>';
+    } else {
+      h += '<div class="um-hint" style="margin-top:10px;">Click a spot to see who has it or to assign someone.</div>';
+    }
+    h += '</div></div>';
+    root.innerHTML = h;
+    wireSiteMap(units);
+  }
+
+  function wireSiteMap(units){
+    var $ = function(id){ return document.getElementById(id); };
+    $('smCloseBtn').addEventListener('click', closeSiteMap);
+    var search = $('smSearch');
+    search.addEventListener('input', function(){
+      siteMapUI.search = search.value;
+      var pos = search.selectionStart;
+      renderSiteMap();
+      var again = $('smSearch'); again.focus(); try { again.setSelectionRange(pos, pos); } catch(e){}
+    });
+    document.querySelectorAll('#siteMapRoot .sm-spot').forEach(function(g){
+      var pick = function(){ siteMapUI.selected = g.getAttribute('data-spot'); renderSiteMap(); };
+      g.addEventListener('click', pick);
+      g.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); pick(); } });
+    });
+    document.querySelectorAll('#siteMapRoot .sm-chip').forEach(function(b){
+      b.addEventListener('click', function(){ siteMapUI.selected = b.getAttribute('data-unit'); renderSiteMap(); });
+    });
+
+    if ($('smPanelClose')) $('smPanelClose').addEventListener('click', function(){ siteMapUI.selected = null; renderSiteMap(); });
+    if ($('smPick')) $('smPick').addEventListener('change', function(){
+      var w = state.waitlist.find(function(x){ return x.id === $('smPick').value; });
+      if (!w) return;
+      $('smName').value = w.name;
+      if (w.lot) $('smLot').value = w.lot;
+      if ($('smStatus').value === 'vacant') $('smStatus').value = 'assigned';
+    });
+
+    function currentUnit(){
+      var spot = SM_SPOTS.find(function(s){ return s.id === siteMapUI.selected; });
+      if (spot) return { spot: spot, unit: smUnitFor(spot) };
+      return { spot: null, unit: units.find(function(u){ return u.id === siteMapUI.selected; }) || null };
+    }
+    if ($('smUnassign')) $('smUnassign').addEventListener('click', async function(){
+      var cu = currentUnit(); var u = cu.unit;
+      if (!u) return;
+      u.assignee = ''; u.lot = ''; u.status = 'vacant'; u.paidOn = '';
+      await saveLocation('dry-dock');
+      logActivity('Unassigned Dry Dock space '+u.id+' from the site map');
+      siteMapUI.selected = null;
+      renderSiteMap();
+    });
+    if ($('smSave')) $('smSave').addEventListener('click', async function(){
+      var cu = currentUnit(); var u = cu.unit;
+      if (!u){
+        if (!cu.spot) return;
+        u = mk(smUnitId(cu.spot.id));
+        u.assignee = '';
+        units.push(u);
+      }
+      var name = $('smName').value.trim();
+      var status = $('smStatus').value;
+      if (name && status === 'vacant') status = 'assigned';
+      var paid = $('smPaid').value;
+      if (paid && !isSaneISODate(paid)) paid = u.paidOn || '';
+      var pickId = $('smPick') ? $('smPick').value : '';
+      u.assignee = name;
+      u.lot = $('smLot').value.trim();
+      u.status = status;
+      u.paidOn = paid;
+      u.notes = $('smNotes').value;
+      await saveLocation('dry-dock');
+      if (pickId){
+        var wi = state.waitlist.findIndex(function(x){ return x.id === pickId; });
+        if (wi > -1){
+          var who = state.waitlist[wi].name;
+          state.waitlist.splice(wi, 1);
+          await saveWaitlist();
+          logActivity('Placed '+who+' in Dry Dock space '+u.id+' from the site map (removed from waitlist)');
+        }
+      } else {
+        logActivity('Updated Dry Dock space '+u.id+' on the site map'+(name?' — '+name:''));
+      }
+      siteMapUI.selected = null;
+      renderSiteMap();
+    });
   }
 
   function closeModal(){
@@ -2072,7 +2431,8 @@
 
     document.querySelectorAll('[data-action="view-sitemap"]').forEach(function(btn){
       btn.addEventListener('click', function(){
-        showSitemapModal(btn.getAttribute('data-loc'));
+        var locIdForMap = btn.getAttribute('data-loc');
+        if (locIdForMap === 'dry-dock'){ openSiteMap(); } else { showSitemapModal(locIdForMap); }
       });
     });
 
@@ -2169,6 +2529,9 @@
       var label = f==='all' ? 'All' : statusLabel(f);
       html += '<button class="filter-pill'+(state.filter===f?' active':'')+'" data-action="filter" data-filter="'+f+'">'+label+'</button>';
     });
+    if (loc.id === 'dry-dock'){
+      html += '<button class="btn small" data-action="open-site-map">🗺 Site map</button>';
+    }
     html += '<button class="btn secondary small" data-action="export">Export CSV</button>';
     if (can('addRack')){
       html += '<label class="btn secondary small">Import CSV/Excel<input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" id="importCsvInput" style="display:none;"></label>';
@@ -2181,9 +2544,6 @@
     }
     if (can('editRackFields')){
       html += '<button class="btn secondary small" data-action="mark-all-assigned">Mark all assigned</button>';
-    }
-    if (can('deleteRack')){
-      html += '<button class="btn secondary small undo-btn" data-action="delete-all-units">Delete Selected Sites</button>';
     }
     html += '</div>';
 
@@ -2297,6 +2657,9 @@
     });
     h += '</select></div>';
 
+    if (loc.id === 'dry-dock'){
+      h += '<div class="card-field"><label>Assigned to</label><input type="text" data-field="assignee" value="'+escapeAttr(u.assignee||'')+'" placeholder="—"'+dis+'></div>';
+    }
     h += '<div class="card-field"><label>Lot #</label><input type="text" data-field="lot" value="'+escapeAttr(u.lot)+'" placeholder="—"'+dis+'></div>';
 
     // Year-to-date payment tracking — whatever date a site/space is marked
@@ -2352,6 +2715,10 @@
         if (el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
       });
     }
+
+    document.querySelectorAll('[data-action="open-site-map"]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openSiteMap(); });
+    });
 
     document.querySelectorAll('[data-action="export"]').forEach(function(btn){
       btn.addEventListener('click', function(){ exportCsv(loc, units); });
